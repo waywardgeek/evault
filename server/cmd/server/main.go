@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"evault-server/internal/auth"
 	"evault-server/internal/database"
@@ -46,8 +47,11 @@ func main() {
 	// Initialize handlers
 	handler := handlers.NewHandler(dbService, authService)
 
+	// Initialize rate limiter
+	rateLimiter := handlers.NewRateLimiter()
+
 	// Setup Gin router
-	router := setupRouter(handler)
+	router := setupRouter(handler, rateLimiter)
 
 	// Start server
 	port := getEnv("PORT", "8080")
@@ -80,13 +84,20 @@ func connectDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func setupRouter(handler *handlers.Handler) *gin.Engine {
+func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *gin.Engine {
 	// Set Gin mode
 	if getEnv("ENV", "development") == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.Default()
+
+	// Security middleware
+	router.Use(handlers.SecurityHeadersMiddleware())
+	router.Use(handlers.RequestSizeLimitMiddleware(10 * 1024 * 1024)) // 10MB limit
+
+	// Rate limiting middleware (100 requests per minute)
+	router.Use(handlers.RateLimitMiddleware(rateLimiter, 100, time.Minute))
 
 	// CORS middleware
 	router.Use(func(c *gin.Context) {

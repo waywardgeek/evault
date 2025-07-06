@@ -182,6 +182,33 @@ func (s *Service) GetEntriesByUserID(userID string) ([]Entry, error) {
 	return entries, nil
 }
 
+func (s *Service) GetEntryByNameAndUserID(name, userID string) (*Entry, error) {
+	query := `
+		SELECT user_id, name, hpke_blob, deletion_hash, created_at, updated_at
+		FROM entries
+		WHERE user_id = $1 AND name = $2
+	`
+
+	entry := &Entry{}
+	err := s.db.QueryRow(query, userID, name).Scan(
+		&entry.UserID,
+		&entry.Name,
+		&entry.HPKEBlob,
+		&entry.DeletionHash,
+		&entry.CreatedAt,
+		&entry.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("entry not found")
+		}
+		return nil, fmt.Errorf("failed to get entry: %w", err)
+	}
+
+	return entry, nil
+}
+
 func (s *Service) DeleteEntry(userID, name string) error {
 	query := `DELETE FROM entries WHERE user_id = $1 AND name = $2`
 	_, err := s.db.Exec(query, userID, name)

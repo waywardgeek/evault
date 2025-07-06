@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"evault-server/internal/database"
 	"net/http"
@@ -37,6 +38,16 @@ func (h *Handler) RegisterVault(c *gin.Context) {
 		return
 	}
 
+	// Validate PIN requirements
+	if len(req.Pin) < 6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be at least 6 characters long"})
+		return
+	}
+	if len(req.Pin) > 128 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be less than 128 characters"})
+		return
+	}
+
 	// Get user from context
 	user, exists := c.Get("user")
 	if !exists {
@@ -69,6 +80,16 @@ func (h *Handler) RecoverVault(c *gin.Context) {
 	var req RecoverVaultRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	// Validate PIN requirements
+	if len(req.Pin) < 6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be at least 6 characters long"})
+		return
+	}
+	if len(req.Pin) > 128 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be less than 128 characters"})
 		return
 	}
 
@@ -200,16 +221,58 @@ func (h *Handler) DeleteEntry(c *gin.Context) {
 	}
 
 	// Get user from context
-	_, exists := c.Get("user")
+	user, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	// TODO: Validate deletion pre-hash against stored deletion hash
-	// This requires implementing SHA256 validation
+	userObj := user.(*database.User)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Entry deletion not fully implemented yet"})
+	// Get the entry to delete
+	entry, err := h.db.GetEntryByNameAndUserID(req.Name, userObj.UserID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Entry not found"})
+		return
+	}
+
+	// Decode the deletion pre-hash from the request
+	deletionPreHash, err := base64.StdEncoding.DecodeString(req.DeletionPreHash)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid deletion pre-hash encoding"})
+		return
+	}
+
+	// SECURITY: Validate deletion pre-hash against stored deletion hash
+	// The client must provide the pre-hash that when SHA256'd equals the stored deletion hash
+	computedHash := sha256.Sum256(deletionPreHash)
+
+	// Compare computed hash with stored deletion hash
+	if len(entry.DeletionHash) != len(computedHash) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid deletion authorization"})
+		return
+	}
+
+	// Constant-time comparison to prevent timing attacks
+	hashMatch := true
+	for i := 0; i < len(entry.DeletionHash); i++ {
+		if entry.DeletionHash[i] != computedHash[i] {
+			hashMatch = false
+		}
+	}
+
+	if !hashMatch {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid deletion authorization"})
+		return
+	}
+
+	// Delete the entry
+	if err := h.db.DeleteEntry(userObj.UserID, req.Name); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete entry"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Entry deleted successfully"})
 }
 
 // ListEntries returns list of entry names for display
