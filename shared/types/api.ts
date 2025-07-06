@@ -8,7 +8,7 @@ export interface User {
   auth_provider: string;
   verified: boolean;
   openadp_metadata?: string;    // Base64 encoded OpenADP metadata
-  vault_public_key?: string;    // Base64 encoded HPKE public key
+  // SECURITY: Removed vault_public_key - client will derive from long-term secret
   created_at: string;
   updated_at: string;
 }
@@ -54,34 +54,34 @@ export interface RefreshTokenResponse {
 
 // Vault types (Phase 3)
 export interface RegisterVaultRequest {
-  pin: string;
-  metadata?: any;
+  pin: string;                // PIN for validation
+  openadp_metadata: string;   // Base64 encoded OpenADP metadata from client
 }
 
 export interface RegisterVaultResponse {
   success: boolean;
-  vault_public_key: string;
+  // SECURITY: Server just confirms registration - no metadata or keys returned
 }
 
 export interface RecoverVaultRequest {
-  pin: string;
-  metadata: any;
+  pin: string;                // PIN for validation
 }
 
 export interface RecoverVaultResponse {
   success: boolean;
-  vault_private_key: string;
+  openadp_metadata: string;   // Return stored metadata for client OpenADP operations
+  // SECURITY: Client handles OpenADP recovery and key derivation
 }
 
 // Entry types (Phase 3)
 export interface AddEntryRequest {
   name: string;
-  hpke_blob: Uint8Array;
-  deletion_hash: Uint8Array;
+  hpke_blob: string;          // Base64 encoded encrypted data
+  deletion_hash: string;      // Base64 encoded deletion hash
 }
 
 export interface AddEntryResponse {
-  success: boolean;
+  message: string;
 }
 
 export interface GetEntriesRequest {
@@ -89,24 +89,32 @@ export interface GetEntriesRequest {
 }
 
 export interface GetEntriesResponse {
-  entries: Entry[];
+  entries: EntryBlob[];
 }
 
 export interface ListEntriesResponse {
-  entries: Array<{
-    name: string;
-    created_at: string;
-    updated_at: string;
-  }>;
+  names: string[];
 }
 
 export interface DeleteEntryRequest {
   name: string;
-  deletion_hash: Uint8Array;
+  deletion_pre_hash: string;  // Base64 encoded deletion pre-hash
 }
 
 export interface DeleteEntryResponse {
-  success: boolean;
+  message: string;
+}
+
+export interface EntryBlob {
+  name: string;
+  hpke_blob: string;          // Base64 encoded encrypted data
+}
+
+// Vault Status
+export interface VaultStatusResponse {
+  has_vault: boolean;
+  openadp_metadata?: string;  // Metadata for client to use
+  // SECURITY: Removed vault_public_key - client derives from long-term secret
 }
 
 // Error response

@@ -1,84 +1,94 @@
 # eVault Development Makefile
 
-.PHONY: help setup dev-up dev-down server client test-phase1 clean
+.PHONY: help dev server client db openadp setup-env install-deps clean
 
 # Default target
 help:
 	@echo "eVault Development Commands:"
-	@echo "  setup        - Set up the development environment"
-	@echo "  dev-up       - Start all services with Docker Compose"
-	@echo "  dev-down     - Stop all services"
-	@echo "  server       - Run Go server locally"
-	@echo "  client       - Run Next.js client locally"
-	@echo "  test-phase1  - Run Phase 1 tests"
-	@echo "  clean        - Clean up generated files"
-	@echo ""
-	@echo "Database Options:"
-	@echo "  db-docker    - Start Docker PostgreSQL (port 5433)"
-	@echo "  db-local     - Instructions for using local PostgreSQL (port 5432)"
+	@echo "  make dev         - Start all services (db, server, client, openadp)"
+	@echo "  make server      - Start Go server only"
+	@echo "  make client      - Start Next.js client only"
+	@echo "  make db          - Start PostgreSQL database"
+	@echo "  make openadp     - Start OpenADP service (mock)"
+	@echo "  make openadp-real - Start Real OpenADP service (live servers)"
+	@echo "  make setup-env   - Setup environment and dependencies"
+	@echo "  make install-deps - Install all dependencies"
+	@echo "  make clean       - Clean build artifacts and containers"
 
-# Setup development environment
-setup:
-	@echo "Setting up eVault development environment..."
-	@echo "1. Installing server dependencies..."
-	cd server && go mod download
-	@echo "2. Installing client dependencies..."
-	cd client && npm install
-	@echo "3. Creating environment file..."
-	cp server/config.env.example server/.env
-	@echo "✅ Setup complete!"
-	@echo ""
-	@echo "📝 Next steps:"
-	@echo "   - Check server/.env and update DB_PORT (5433 for Docker, 5432 for local)"
-	@echo "   - Run 'make dev-up' to start with Docker PostgreSQL"
-	@echo "   - Or run 'make db-local' for local PostgreSQL instructions"
-
-# Start all services
-dev-up:
+# Development: Start all services
+dev:
 	@echo "Starting eVault development environment..."
-	docker-compose up -d postgres
-	@echo "Waiting for database to be ready..."
-	sleep 5
-	@echo "Starting server and client..."
-	docker-compose up server client
+	@make db &
+	@sleep 3
+	@make openadp &
+	@sleep 2
+	@make server &
+	@sleep 2
+	@make client &
+	@echo "All services started!"
 
-# Stop all services
-dev-down:
-	@echo "Stopping eVault development environment..."
-	docker-compose down
+# Database
+db:
+	@echo "Starting PostgreSQL database..."
+	@if [ ! "$$(docker ps -q -f name=evault-db)" ]; then \
+		if [ "$$(docker ps -a -q -f name=evault-db)" ]; then \
+			docker start evault-db; \
+		else \
+			docker run -d --name evault-db \
+				-e POSTGRES_DB=evault \
+				-e POSTGRES_USER=evault \
+				-e POSTGRES_PASSWORD=evault123 \
+				-p 5432:5432 \
+				postgres:15; \
+		fi; \
+	else \
+		echo "Database already running"; \
+	fi
 
-# Run server locally
+# OpenADP Service (Mock)
+openadp:
+	@echo "Starting OpenADP service..."
+	cd server && npm run openadp
+
+# Real OpenADP Service (Live servers)
+openadp-real:
+	@echo "Starting Real OpenADP service..."
+	cd server && node real_openadp_service.js
+
+# Go Server
 server:
 	@echo "Starting Go server..."
 	cd server && go run cmd/server/main.go
 
-# Run client locally
+# Next.js Client
 client:
 	@echo "Starting Next.js client..."
 	cd client && npm run dev
 
-# Run Phase 1 tests
-test-phase1:
-	@echo "Running Phase 1 tests..."
-	@echo "1. Testing server build..."
-	cd server && go build cmd/server/main.go
-	@echo "2. Testing client build..."
-	cd client && npm run build
-	@echo "3. Testing TypeScript compilation..."
-	cd client && npm run type-check
-	@echo "4. Testing database migration (requires PostgreSQL)..."
-	@echo "   Note: Start PostgreSQL first with 'make dev-up' or 'make db-docker'"
-	@echo "✅ Phase 1 tests complete!"
+# Setup environment
+setup-env:
+	@echo "Setting up eVault development environment..."
+	@make install-deps
+	@make db
+	@echo "Environment setup complete!"
 
-# Clean up generated files
+# Install dependencies
+install-deps:
+	@echo "Installing dependencies..."
+	@echo "Installing Go dependencies..."
+	cd server && go mod download
+	@echo "Installing Node.js dependencies..."
+	cd client && npm install
+	cd server && npm install
+	@echo "Dependencies installed!"
+
+# Clean everything
 clean:
-	@echo "Cleaning up generated files..."
-	rm -f server/server
-	rm -f server/main
-	rm -rf client/.next
-	rm -rf client/out
-	docker-compose down -v
-	@echo "✅ Cleanup complete!"
+	@echo "Cleaning eVault environment..."
+	@docker stop evault-db || true
+	@docker rm evault-db || true
+	@docker volume rm evault-db-data || true
+	@echo "Cleaned!"
 
 # Quick database setup - Docker PostgreSQL
 db-docker:

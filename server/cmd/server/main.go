@@ -131,20 +131,21 @@ func setupRouter(handler *handlers.Handler) *gin.Engine {
 			protected.POST("user/refresh", handler.RefreshToken) // Refresh JWT token
 
 			// Vault routes (Phase 3)
-			// protected.POST("vault/register", handler.RegisterVault)
-			// protected.POST("vault/recover", handler.RecoverVault)
+			protected.POST("vault/register", handler.RegisterVault)
+			protected.POST("vault/recover", handler.RecoverVault)
+			protected.GET("vault/status", handler.GetVaultStatus)
 
 			// Entry routes (Phase 3)
-			// protected.POST("entries", handler.AddEntry)
-			// protected.GET("entries", handler.GetEntries)
-			// protected.GET("entries/list", handler.ListEntries)
-			// protected.DELETE("entries/:name", handler.DeleteEntry)
+			protected.POST("entries", handler.AddEntry)
+			protected.GET("entries", handler.GetEntries)
+			protected.GET("entries/list", handler.ListEntries)
+			protected.DELETE("entries", handler.DeleteEntry)
 		}
 
 		// Status endpoint (public)
 		api.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
-				"message": "API ready - Phase 2 authentication implemented!",
+				"message": "API ready - Phase 3 core vault operations implemented!",
 				"endpoints": gin.H{
 					"auth": gin.H{
 						"POST /api/auth/url":      "Get Google OAuth URL",
@@ -152,8 +153,15 @@ func setupRouter(handler *handlers.Handler) *gin.Engine {
 						"GET /api/auth/callback":  "Handle browser OAuth callback",
 					},
 					"protected": gin.H{
-						"GET /api/user":          "Get current user (requires auth)",
-						"POST /api/user/refresh": "Refresh JWT token (requires auth)",
+						"GET /api/user":            "Get current user (requires auth)",
+						"POST /api/user/refresh":   "Refresh JWT token (requires auth)",
+						"POST /api/vault/register": "Register new vault (requires auth)",
+						"POST /api/vault/recover":  "Recover vault with PIN (requires auth)",
+						"GET /api/vault/status":    "Get vault status (requires auth)",
+						"POST /api/entries":        "Add entry to vault (requires auth)",
+						"GET /api/entries":         "Get all entries (requires auth)",
+						"GET /api/entries/list":    "List entry names (requires auth)",
+						"DELETE /api/entries":      "Delete entry from vault (requires auth)",
 					},
 				},
 			})

@@ -89,7 +89,7 @@ ciphertext, one per recovery code.
 All 'bytes' values are base64 encoded.
 ```
 RegisterVault(userID: string, authToken: bytes email: string, phoneNumber: string,
-    eVaultPublicKey: bytes, ocryptMetadata: string) -> err
+    ocryptMetadata: string) -> err
 
 TThis either succeeds or fails with an error message.  This is called once ever
 when a user first registers with eVaulltApp.  Steps taken before calling this include:

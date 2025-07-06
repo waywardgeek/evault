@@ -100,6 +100,34 @@ class ApiClient {
   async getStatus(): Promise<any> {
     return this.makeRequest<any>('/api/status')
   }
+
+  // Generic HTTP methods for vault operations
+  async get<T>(endpoint: string): Promise<T> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'GET',
+    })
+  }
+
+  async post<T>(endpoint: string, data?: any): Promise<T> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
+
+  async put<T>(endpoint: string, data?: any): Promise<T> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
+
+  async delete<T>(endpoint: string, data?: any): Promise<T> {
+    return this.makeRequest<T>(endpoint, {
+      method: 'DELETE',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+  }
 }
 
 export const apiClient = new ApiClient()

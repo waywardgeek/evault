@@ -14,8 +14,12 @@
   "license": "ISC",
   "description": "eVault client application",
   "dependencies": {
+    "@hpke/core": "^1.7.2",
+    "@noble/hashes": "^1.8.0",
+    "@openadp/ocrypt": "^0.1.3",
     "@tailwindcss/postcss": "^4.1.11",
     "next": "^14.0.0",
+    "next-auth": "^4.24.11",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "zustand": "^4.4.0"

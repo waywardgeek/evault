@@ -68,7 +68,7 @@ export default function DashboardPage() {
           eVault Dashboard
         </h1>
         <p className="text-gray-600">
-          Secure personal data vault - Phase 2 Authentication
+          Secure personal data vault - Phase 3 Vault Operations
         </p>
       </div>
 
@@ -196,48 +196,52 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Next Steps */}
+      {/* Phase 3 Features */}
       <div className="card mt-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
-          📋 Next Steps (Phase 3)
+          🔐 Phase 3: Vault Operations (Ready!)
         </h3>
-        <div className="space-y-3">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-xs font-medium text-gray-600">1</span>
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-blue-900">Access Your Vault</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Secure storage for recovery codes with OpenADP protection
+                </p>
               </div>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-900">OpenADP Integration</h4>
-              <p className="text-sm text-gray-600">
-                Integrate OpenADP Node.js SDK for distributed cryptography
-              </p>
+              <a
+                href="/vault"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Open Vault
+              </a>
             </div>
           </div>
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-xs font-medium text-gray-600">2</span>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-900">Vault Operations</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="feature-item">
+              <h4 className="font-medium text-gray-900 mb-2">✅ OpenADP Integration</h4>
               <p className="text-sm text-gray-600">
-                Implement secure data entry storage and retrieval
+                PIN-protected vaults using distributed cryptography
               </p>
             </div>
-          </div>
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center">
-                <span className="text-xs font-medium text-gray-600">3</span>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-medium text-gray-900">Testing & Deployment</h4>
+            <div className="feature-item">
+              <h4 className="font-medium text-gray-900 mb-2">✅ HPKE Encryption</h4>
               <p className="text-sm text-gray-600">
-                Complete testing suite and production deployment
+                Hybrid Public Key Encryption for secure data storage
+              </p>
+            </div>
+            <div className="feature-item">
+              <h4 className="font-medium text-gray-900 mb-2">✅ Frictionless Adding</h4>
+              <p className="text-sm text-gray-600">
+                Add entries without PIN after vault unlock
+              </p>
+            </div>
+            <div className="feature-item">
+              <h4 className="font-medium text-gray-900 mb-2">✅ Vault Management</h4>
+              <p className="text-sm text-gray-600">
+                Complete CRUD operations for vault entries
               </p>
             </div>
           </div>
