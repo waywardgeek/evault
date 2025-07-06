@@ -69,4 +69,23 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Test artifacts and reports
+test-results/
+playwright-report/
+coverage/
+*.lcov
+
+# Live/temporary test files
+**/test-live-*.js
+**/test-live-*.mjs
+**/test-real-*.js
+**/test-real-*.mjs
+
+# Jest cache
+.cache/
+jest_cache/
+
+# Playwright cache
+.playwright/ 
