@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"evault-server/internal/auth"
 	"evault-server/internal/database"
 	"evault-server/internal/handlers"
 
@@ -34,8 +35,16 @@ func main() {
 		log.Fatal("Failed to run migrations:", err)
 	}
 
+	// Initialize auth service
+	authService := auth.NewAuthService(
+		getEnv("GOOGLE_CLIENT_ID", ""),
+		getEnv("GOOGLE_CLIENT_SECRET", ""),
+		getEnv("GOOGLE_REDIRECT_URL", "http://localhost:3000/auth/callback"),
+		getEnv("JWT_SECRET", "your-secret-key-change-this-in-production"),
+	)
+
 	// Initialize handlers
-	handler := handlers.NewHandler(dbService)
+	handler := handlers.NewHandler(dbService, authService)
 
 	// Setup Gin router
 	router := setupRouter(handler)
@@ -102,27 +111,51 @@ func setupRouter(handler *handlers.Handler) *gin.Engine {
 		})
 	})
 
-	// API routes (will be implemented in later phases)
+	// API routes
 	api := router.Group("/api")
 	{
-		// Authentication routes (Phase 2)
-		// api.POST("/auth/google", handler.HandleGoogleAuth)
-		// api.POST("/auth/callback", handler.HandleGoogleCallback)
+		// Public authentication routes (Phase 2)
+		auth := api.Group("/auth")
+		{
+			auth.POST("/url", handler.GetAuthURL)          // Get Google OAuth URL
+			auth.POST("/callback", handler.HandleCallback) // Handle OAuth callback
+			auth.GET("/callback", handler.HandleCallback)  // Support GET for browser redirects
+		}
 
-		// Vault routes (Phase 3)
-		// api.POST("/vault/register", handler.RegisterVault)
-		// api.POST("/vault/recover", handler.RecoverVault)
+		// Protected routes (require authentication)
+		protected := api.Group("/")
+		protected.Use(handler.AuthMiddleware())
+		{
+			// User routes
+			protected.GET("user", handler.GetCurrentUser)        // Get current user info
+			protected.POST("user/refresh", handler.RefreshToken) // Refresh JWT token
 
-		// Entry routes (Phase 3)
-		// api.POST("/entries", handler.AddEntry)
-		// api.GET("/entries", handler.GetEntries)
-		// api.GET("/entries/list", handler.ListEntries)
-		// api.DELETE("/entries/:name", handler.DeleteEntry)
+			// Vault routes (Phase 3)
+			// protected.POST("vault/register", handler.RegisterVault)
+			// protected.POST("vault/recover", handler.RecoverVault)
 
-		// Placeholder for now
+			// Entry routes (Phase 3)
+			// protected.POST("entries", handler.AddEntry)
+			// protected.GET("entries", handler.GetEntries)
+			// protected.GET("entries/list", handler.ListEntries)
+			// protected.DELETE("entries/:name", handler.DeleteEntry)
+		}
+
+		// Status endpoint (public)
 		api.GET("/status", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
-				"message": "API ready - endpoints will be implemented in Phase 2 & 3",
+				"message": "API ready - Phase 2 authentication implemented!",
+				"endpoints": gin.H{
+					"auth": gin.H{
+						"POST /api/auth/url":      "Get Google OAuth URL",
+						"POST /api/auth/callback": "Handle OAuth callback",
+						"GET /api/auth/callback":  "Handle browser OAuth callback",
+					},
+					"protected": gin.H{
+						"GET /api/user":          "Get current user (requires auth)",
+						"POST /api/user/refresh": "Refresh JWT token (requires auth)",
+					},
+				},
 			})
 		})
 	}

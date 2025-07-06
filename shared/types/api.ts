@@ -16,32 +16,76 @@ export interface User {
 export interface Entry {
   user_id: string;
   name: string;
-  hpke_blob: string;     // Base64 encoded HPKE ciphertext
-  deletion_hash: string; // Base64 encoded hash for deletion
+  hpke_blob: Uint8Array;
+  deletion_hash: Uint8Array;
   created_at: string;
   updated_at: string;
 }
 
-// API Request/Response types
+// API Request/Response types for eVault
 
+// Authentication types (Phase 2)
+export interface AuthRequest {
+  redirect_url?: string;
+}
+
+export interface AuthResponse {
+  auth_url: string;
+  state: string;
+}
+
+export interface CallbackRequest {
+  code: string;
+  state: string;
+}
+
+export interface CallbackResponse {
+  token: string;
+  user: User;
+}
+
+export interface UserResponse {
+  user: User;
+}
+
+export interface RefreshTokenResponse {
+  token: string;
+}
+
+// Vault types (Phase 3)
 export interface RegisterVaultRequest {
-  vault_public_key: string;   // Base64 encoded HPKE public key
-  openadp_metadata: string;   // Base64 encoded OpenADP metadata
+  pin: string;
+  metadata?: any;
+}
+
+export interface RegisterVaultResponse {
+  success: boolean;
+  vault_public_key: string;
 }
 
 export interface RecoverVaultRequest {
   pin: string;
+  metadata: any;
 }
 
 export interface RecoverVaultResponse {
-  openadp_metadata: string;   // Updated metadata
-  remaining_guesses: number;
+  success: boolean;
+  vault_private_key: string;
 }
 
+// Entry types (Phase 3)
 export interface AddEntryRequest {
   name: string;
-  hpke_blob: string;          // Base64 encoded HPKE ciphertext
-  deletion_hash: string;      // Base64 encoded hash for deletion
+  hpke_blob: Uint8Array;
+  deletion_hash: Uint8Array;
+}
+
+export interface AddEntryResponse {
+  success: boolean;
+}
+
+export interface GetEntriesRequest {
+  names?: string[];
 }
 
 export interface GetEntriesResponse {
@@ -49,32 +93,29 @@ export interface GetEntriesResponse {
 }
 
 export interface ListEntriesResponse {
-  names: string[];
+  entries: Array<{
+    name: string;
+    created_at: string;
+    updated_at: string;
+  }>;
 }
 
 export interface DeleteEntryRequest {
   name: string;
-  deletion_pre_hash: string;  // Base64 encoded pre-hash for verification
+  deletion_hash: Uint8Array;
 }
 
-// Authentication types
-export interface GoogleAuthRequest {
-  id_token: string;
+export interface DeleteEntryResponse {
+  success: boolean;
 }
 
-export interface AuthResponse {
-  token: string;
-  user: User;
+// Error response
+export interface ErrorResponse {
+  error: string;
 }
 
 // Health check response
 export interface HealthResponse {
   status: 'healthy' | 'unhealthy';
   service: string;
-}
-
-// Error response
-export interface ErrorResponse {
-  error: string;
-  code?: string;
 } 

@@ -1,16 +1,19 @@
 package handlers
 
 import (
+	"evault-server/internal/auth"
 	"evault-server/internal/database"
 )
 
 type Handler struct {
-	db *database.Service
+	db          *database.Service
+	authService *auth.AuthService
 }
 
-func NewHandler(db *database.Service) *Handler {
+func NewHandler(db *database.Service, authService *auth.AuthService) *Handler {
 	return &Handler{
-		db: db,
+		db:          db,
+		authService: authService,
 	}
 }
 
