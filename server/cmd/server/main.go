@@ -92,12 +92,11 @@ func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *
 
 	router := gin.Default()
 
-	// Security middleware
-	router.Use(handlers.SecurityHeadersMiddleware())
-	router.Use(handlers.RequestSizeLimitMiddleware(10 * 1024 * 1024)) // 10MB limit
-
 	// Rate limiting middleware (100 requests per minute)
 	router.Use(handlers.RateLimitMiddleware(rateLimiter, 100, time.Minute))
+
+	// Request size limit middleware
+	router.Use(handlers.RequestSizeLimitMiddleware(10 * 1024 * 1024)) // 10MB limit
 
 	// CORS middleware
 	router.Use(func(c *gin.Context) {
@@ -113,6 +112,9 @@ func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *
 
 		c.Next()
 	})
+
+	// Security headers middleware (after CORS to avoid being overridden)
+	router.Use(handlers.SecurityHeadersMiddleware())
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {

@@ -104,6 +104,9 @@ func RateLimitMiddleware(rateLimiter *RateLimiter, limit int, window time.Durati
 // SecurityHeadersMiddleware adds security headers
 func SecurityHeadersMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Test header to verify middleware is working
+		c.Header("X-eVault-Security", "enabled")
+
 		// Security headers
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.Header("X-Frame-Options", "DENY")
