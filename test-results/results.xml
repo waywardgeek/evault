@@ -1,0 +1,136 @@
+<testsuites id="" name="" tests="4" failures="3" skipped="0" errors="0" time="6.341419000000001">
+<testsuite name="homepage.spec.ts" timestamp="2025-07-06T22:14:10.614Z" hostname="chromium" tests="4" failures="3" skipped="0" time="9.942" errors="0">
+<testcase name="eVault Homepage › should load homepage successfully" classname="homepage.spec.ts" time="0.778">
+<failure message="homepage.spec.ts:4:7 should load homepage successfully" type="FAILURE">
+<![CDATA[  [chromium] › homepage.spec.ts:4:7 › eVault Homepage › should load homepage successfully ──────────
+
+    Error: expect.toBeVisible: Error: strict mode violation: getByRole('heading', { name: /eVault/i }) resolved to 2 elements:
+        1) <h1 class="text-2xl font-bold text-gray-900">eVault</h1> aka getByRole('heading', { name: 'eVault', exact: true })
+        2) <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to eVault</h1> aka getByRole('heading', { name: 'Welcome to eVault' })
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: /eVault/i })
+
+
+       9 |
+      10 |     // Check main heading
+    > 11 |     await expect(page.getByRole('heading', { name: /eVault/i })).toBeVisible();
+         |                                                                  ^
+      12 |
+      13 |     // Check for main sections
+      14 |     await expect(page.getByText(/Secure Personal Data Vault/i)).toBeVisible();
+        at /home/waywardgeek/projects/evault/tests/e2e/homepage.spec.ts:11:66
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/homepage-eVault-Homepage-should-load-homepage-successfully-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/homepage-eVault-Homepage-should-load-homepage-successfully-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/homepage-eVault-Homepage-should-load-homepage-successfully-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|homepage-eVault-Homepage-should-load-homepage-successfully-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|homepage-eVault-Homepage-should-load-homepage-successfully-chromium/video.webm]]
+
+[[ATTACHMENT|homepage-eVault-Homepage-should-load-homepage-successfully-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="eVault Homepage › should have working navigation" classname="homepage.spec.ts" time="2.594">
+</testcase>
+<testcase name="eVault Homepage › should display features section" classname="homepage.spec.ts" time="5.773">
+<failure message="homepage.spec.ts:29:7 should display features section" type="FAILURE">
+<![CDATA[  [chromium] › homepage.spec.ts:29:7 › eVault Homepage › should display features section ───────────
+
+    Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
+
+    Locator: getByText(/Zero-trust/i)
+    Expected: visible
+    Received: <element(s) not found>
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByText(/Zero-trust/i)
+
+
+      31 |
+      32 |     // Check for features section
+    > 33 |     await expect(page.getByText(/Zero-trust/i)).toBeVisible();
+         |                                                 ^
+      34 |     await expect(page.getByText(/End-to-end/i)).toBeVisible();
+      35 |     await expect(page.getByText(/Distributed/i)).toBeVisible();
+      36 |   });
+        at /home/waywardgeek/projects/evault/tests/e2e/homepage.spec.ts:33:49
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/homepage-eVault-Homepage-should-display-features-section-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/homepage-eVault-Homepage-should-display-features-section-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/homepage-eVault-Homepage-should-display-features-section-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|homepage-eVault-Homepage-should-display-features-section-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|homepage-eVault-Homepage-should-display-features-section-chromium/video.webm]]
+
+[[ATTACHMENT|homepage-eVault-Homepage-should-display-features-section-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+<testcase name="eVault Homepage › should have responsive design" classname="homepage.spec.ts" time="0.797">
+<failure message="homepage.spec.ts:38:7 should have responsive design" type="FAILURE">
+<![CDATA[  [chromium] › homepage.spec.ts:38:7 › eVault Homepage › should have responsive design ─────────────
+
+    Error: expect.toBeVisible: Error: strict mode violation: getByRole('heading', { name: /eVault/i }) resolved to 2 elements:
+        1) <h1 class="text-2xl font-bold text-gray-900">eVault</h1> aka getByRole('heading', { name: 'eVault', exact: true })
+        2) <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to eVault</h1> aka getByRole('heading', { name: 'Welcome to eVault' })
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for getByRole('heading', { name: /eVault/i })
+
+
+      40 |     await page.setViewportSize({ width: 1280, height: 720 });
+      41 |     await page.goto('/');
+    > 42 |     await expect(page.getByRole('heading', { name: /eVault/i })).toBeVisible();
+         |                                                                  ^
+      43 |
+      44 |     // Test mobile
+      45 |     await page.setViewportSize({ width: 375, height: 667 });
+        at /home/waywardgeek/projects/evault/tests/e2e/homepage.spec.ts:42:66
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/homepage-eVault-Homepage-should-have-responsive-design-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results/homepage-eVault-Homepage-should-have-responsive-design-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../test-results/homepage-eVault-Homepage-should-have-responsive-design-chromium/error-context.md
+]]>
+</failure>
+<system-out>
+<![CDATA[
+[[ATTACHMENT|homepage-eVault-Homepage-should-have-responsive-design-chromium/test-failed-1.png]]
+
+[[ATTACHMENT|homepage-eVault-Homepage-should-have-responsive-design-chromium/video.webm]]
+
+[[ATTACHMENT|homepage-eVault-Homepage-should-have-responsive-design-chromium/error-context.md]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+</testsuites>
