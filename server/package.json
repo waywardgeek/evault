@@ -1,11 +1,13 @@
 {
-  "name": "server",
+  "name": "evault-server",
   "version": "1.0.0",
-  "main": "index.js",
-  "type": "module",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "openadp": "node openadp_service.js"
+    "start": "go run cmd/server/main.go",
+    "build": "go build -o bin/evault-server cmd/server/main.go",
+    "test": "go test ./...",
+    "test:verbose": "go test -v ./...",
+    "test:coverage": "go test -cover ./..."
   },
   "keywords": [],
   "author": "",

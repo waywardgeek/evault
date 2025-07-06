@@ -7,11 +7,11 @@ test.describe('eVault Homepage', () => {
     // Check page title
     await expect(page).toHaveTitle(/eVault/);
 
-    // Check main heading
-    await expect(page.getByRole('heading', { name: /eVault/i })).toBeVisible();
+    // Check main heading - use more specific selector to avoid strict mode violation
+    await expect(page.getByRole('heading', { name: 'Welcome to eVault' })).toBeVisible();
 
     // Check for main sections
-    await expect(page.getByText(/Secure Personal Data Vault/i)).toBeVisible();
+    await expect(page.getByText(/nation-state resistant protection/i)).toBeVisible();
   });
 
   test('should have working navigation', async ({ page }) => {
@@ -29,21 +29,21 @@ test.describe('eVault Homepage', () => {
   test('should display features section', async ({ page }) => {
     await page.goto('/');
 
-    // Check for features section
-    await expect(page.getByText(/Zero-trust/i)).toBeVisible();
-    await expect(page.getByText(/End-to-end/i)).toBeVisible();
-    await expect(page.getByText(/Distributed/i)).toBeVisible();
+    // Check for features section based on actual content
+    await expect(page.getByText(/Secure Storage/i)).toBeVisible();
+    await expect(page.getByText(/Distributed Trust/i)).toBeVisible();
+    await expect(page.getByText(/Nation-State Resistant/i)).toBeVisible();
   });
 
   test('should have responsive design', async ({ page }) => {
     // Test desktop
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /eVault/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome to eVault' })).toBeVisible();
 
     // Test mobile
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /eVault/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome to eVault' })).toBeVisible();
   });
 }); 
