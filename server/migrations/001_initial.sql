@@ -1,5 +1,5 @@
 -- migrations/001_initial.sql
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     user_id VARCHAR(255) PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20),
@@ -11,7 +11,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE entries (
+CREATE TABLE IF NOT EXISTS entries (
     user_id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     hpke_blob BYTEA NOT NULL,
@@ -22,5 +22,5 @@ CREATE TABLE entries (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_entries_user_id ON entries(user_id); 
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id); 

@@ -12,6 +12,10 @@ help:
 	@echo "  client       - Run Next.js client locally"
 	@echo "  test-phase1  - Run Phase 1 tests"
 	@echo "  clean        - Clean up generated files"
+	@echo ""
+	@echo "Database Options:"
+	@echo "  db-docker    - Start Docker PostgreSQL (port 5433)"
+	@echo "  db-local     - Instructions for using local PostgreSQL (port 5432)"
 
 # Setup development environment
 setup:
@@ -23,6 +27,11 @@ setup:
 	@echo "3. Creating environment file..."
 	cp server/config.env.example server/.env
 	@echo "✅ Setup complete!"
+	@echo ""
+	@echo "📝 Next steps:"
+	@echo "   - Check server/.env and update DB_PORT (5433 for Docker, 5432 for local)"
+	@echo "   - Run 'make dev-up' to start with Docker PostgreSQL"
+	@echo "   - Or run 'make db-local' for local PostgreSQL instructions"
 
 # Start all services
 dev-up:
@@ -58,7 +67,7 @@ test-phase1:
 	@echo "3. Testing TypeScript compilation..."
 	cd client && npm run type-check
 	@echo "4. Testing database migration (requires PostgreSQL)..."
-	@echo "   Note: Start PostgreSQL first with 'make dev-up'"
+	@echo "   Note: Start PostgreSQL first with 'make dev-up' or 'make db-docker'"
 	@echo "✅ Phase 1 tests complete!"
 
 # Clean up generated files
@@ -71,14 +80,31 @@ clean:
 	docker-compose down -v
 	@echo "✅ Cleanup complete!"
 
-# Quick database setup
-db-setup:
-	@echo "Setting up PostgreSQL database..."
+# Quick database setup - Docker PostgreSQL
+db-docker:
+	@echo "Setting up Docker PostgreSQL..."
 	docker-compose up -d postgres
-	@echo "Database will be available at localhost:5432"
+	@echo "✅ Database will be available at localhost:5433"
 	@echo "Database: evault"
 	@echo "Username: postgres"
 	@echo "Password: password"
+	@echo ""
+	@echo "📝 Update server/.env to use:"
+	@echo "   DB_PORT=5433"
+
+# Instructions for local PostgreSQL
+db-local:
+	@echo "Using Local PostgreSQL Setup:"
+	@echo ""
+	@echo "1. Create database:"
+	@echo "   sudo -u postgres createdb evault"
+	@echo ""
+	@echo "2. Update server/.env to use:"
+	@echo "   DB_PORT=5432"
+	@echo "   DB_PASSWORD=your_local_postgres_password"
+	@echo ""
+	@echo "3. Test connection:"
+	@echo "   psql -h localhost -p 5432 -U postgres -d evault"
 
 # Check health of services
 health:
