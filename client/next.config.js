@@ -1,3 +1,5 @@
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
@@ -11,6 +13,13 @@ const nextConfig = {
         destination: `${apiUrl}/api/:path*`,
       },
     ]
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, './src'),
+    }
+    return config
   },
 }
 
