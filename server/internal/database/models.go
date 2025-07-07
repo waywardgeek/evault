@@ -267,3 +267,9 @@ func (s *Service) DeleteEntry(userID, name string) error {
 	_, err := s.db.Exec(query, userID, name)
 	return err
 }
+
+func (s *Service) DeleteUser(userID string) error {
+	query := `DELETE FROM users WHERE user_id = $1`
+	_, err := s.db.Exec(query, userID)
+	return err
+}

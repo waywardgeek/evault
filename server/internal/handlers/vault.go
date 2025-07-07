@@ -98,18 +98,25 @@ func (h *Handler) RegisterVault(c *gin.Context) {
 
 // RecoverVault returns stored metadata for client to handle OpenADP recovery
 func (h *Handler) RecoverVault(c *gin.Context) {
+	log.Printf("🔓 Processing vault recovery request")
+
 	var req RecoverVaultRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("❌ Invalid request format: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
 
+	log.Printf("📱 PIN length: %d", len(req.Pin))
+
 	// Validate PIN requirements
 	if len(req.Pin) < 4 {
+		log.Printf("❌ PIN too short: %d characters", len(req.Pin))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be at least 4 characters long"})
 		return
 	}
 	if len(req.Pin) > 128 {
+		log.Printf("❌ PIN too long: %d characters", len(req.Pin))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be less than 128 characters"})
 		return
 	}
@@ -117,26 +124,33 @@ func (h *Handler) RecoverVault(c *gin.Context) {
 	// Get user from context
 	user, exists := c.Get("user")
 	if !exists {
+		log.Printf("❌ User not found in context")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
 	userModel := user.(*database.User)
+	log.Printf("👤 Processing recovery for user: %s", userModel.Email)
 
 	// Get current metadata using two-slot system
 	currentMetadata, err := h.db.GetCurrentOpenADPMetadata(userModel.UserID)
 	if err != nil {
+		log.Printf("❌ Failed to get vault metadata for user %s: %v", userModel.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get vault metadata"})
 		return
 	}
 
 	// Check if user has a vault
 	if currentMetadata == nil {
+		log.Printf("❌ User %s has no vault registered", userModel.Email)
 		c.JSON(http.StatusNotFound, gin.H{"error": "User has no vault registered"})
 		return
 	}
 
+	log.Printf("📦 Returning metadata to client: length=%d", len(*currentMetadata))
+
 	// SECURITY: Return current metadata (latest from two-slot system) - client handles OpenADP recovery
+	log.Printf("✅ Successfully returning current metadata for user: %s", userModel.Email)
 	c.JSON(http.StatusOK, RecoverVaultResponse{
 		Success:         true,
 		OpenADPMetadata: *currentMetadata,
@@ -167,7 +181,7 @@ func (h *Handler) RefreshMetadata(c *gin.Context) {
 	userModel := user.(*database.User)
 	log.Printf("👤 Processing metadata refresh for user: %s", userModel.Email)
 
-	// Validate that user has a vault registered
+	// Check current metadata before refresh
 	currentMetadata, err := h.db.GetCurrentOpenADPMetadata(userModel.UserID)
 	if err != nil {
 		log.Printf("❌ Failed to check vault status for user %s: %v", userModel.Email, err)
@@ -189,6 +203,16 @@ func (h *Handler) RefreshMetadata(c *gin.Context) {
 		log.Printf("❌ Failed to refresh metadata for user %s: %v", userModel.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh metadata"})
 		return
+	}
+
+	// Verify the refresh worked by checking current metadata after update
+	newCurrentMetadata, err := h.db.GetCurrentOpenADPMetadata(userModel.UserID)
+	if err != nil {
+		log.Printf("⚠️  Warning: Failed to verify metadata refresh for user %s: %v", userModel.Email, err)
+	} else if *newCurrentMetadata == req.UpdatedMetadata {
+		log.Printf("✅ Metadata refresh verified - new metadata is now current")
+	} else {
+		log.Printf("⚠️  Warning: Metadata refresh may have failed - current doesn't match submitted")
 	}
 
 	log.Printf("✅ Successfully refreshed metadata for user: %s", userModel.Email)
@@ -447,5 +471,47 @@ func (h *Handler) GetVaultStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"has_vault":        hasVault,
 		"openadp_metadata": currentMetadata, // Return current metadata for client OpenADP operations
+	})
+}
+
+// DeleteAccount removes all user data including vault metadata and entries
+func (h *Handler) DeleteAccount(c *gin.Context) {
+	log.Printf("🗑️  Processing account deletion request")
+
+	// Get user from context
+	user, exists := c.Get("user")
+	if !exists {
+		log.Printf("❌ User not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	userModel := user.(*database.User)
+	log.Printf("👤 Processing account deletion for user: %s", userModel.Email)
+
+	// Delete all entries first (foreign key constraint)
+	entries, err := h.db.GetEntriesByUserID(userModel.UserID)
+	if err != nil {
+		log.Printf("⚠️  Warning: Failed to get entries for deletion: %v", err)
+	} else {
+		log.Printf("🗑️  Deleting %d vault entries", len(entries))
+		for _, entry := range entries {
+			if err := h.db.DeleteEntry(userModel.UserID, entry.Name); err != nil {
+				log.Printf("⚠️  Warning: Failed to delete entry %s: %v", entry.Name, err)
+			}
+		}
+	}
+
+	// Delete the user (this will cascade delete related data)
+	if err := h.db.DeleteUser(userModel.UserID); err != nil {
+		log.Printf("❌ Failed to delete user %s: %v", userModel.Email, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete account"})
+		return
+	}
+
+	log.Printf("✅ Successfully deleted account for user: %s", userModel.Email)
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Account deleted successfully",
 	})
 }

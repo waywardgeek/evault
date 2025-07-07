@@ -1,7 +1,7 @@
 // OpenADP integration for eVault - REAL IMPLEMENTATION
 // Using local browser-compatible OpenADP SDK to connect to live distributed servers
 
-import { register, recover } from '@/lib/openadp-browser/ocrypt.js';
+import { register, recover, recoverAndReregister } from '@/lib/openadp-browser/index.js';
 
 export class eVaultOpenADP {
   /**
@@ -119,6 +119,49 @@ export class eVaultOpenADP {
   }
 
   /**
+   * Reset vault when locked out - uses recoverAndReregister to create fresh metadata
+   * This breaks out of the "too many guesses" lockout by creating a completely new backup
+   */
+  async resetLockedVault(metadata: string, pin: string): Promise<{ privateKey: Uint8Array, newMetadata: string }> {
+    try {
+      console.log(`🔄 Attempting vault reset to break out of lockout...`);
+      
+      // Convert base64 metadata back to Uint8Array
+      const metadataBytes = new Uint8Array(atob(metadata).split('').map(c => c.charCodeAt(0)));
+      
+      console.log(`🌐 Calling OpenADP recoverAndReregister...`);
+      
+      // Use recoverAndReregister to create completely fresh metadata
+      const result = await recoverAndReregister(metadataBytes, pin);
+      
+      console.log(`✅ Vault reset successful - created fresh metadata`);
+      
+      // Derive HPKE keypair from recovered long-term secret
+      const { publicKey, privateKey } = await this.deriveHPKEKeypair(result.secret);
+      
+      // Store public key permanently in localStorage
+      this.storePublicKeyLocally(publicKey);
+      
+      // Cache private key in memory for vault operations
+      this.cachePrivateKey(privateKey);
+      
+      // Convert new metadata to base64
+      const newMetadataBase64 = btoa(String.fromCharCode.apply(null, Array.from(result.newMetadata)));
+      
+      console.log(`🔑 Derived and stored HPKE keys from reset vault`);
+      
+      return { 
+        privateKey: privateKey,
+        newMetadata: newMetadataBase64
+      };
+    } catch (error) {
+      const err = error as Error;
+      console.error('❌ Vault reset failed:', err.message);
+      throw new Error(`Vault reset failed: ${err.message}`);
+    }
+  }
+
+  /**
    * Derive HPKE keypair from long-term secret using X25519
    * SECURITY: Client-side only - never send to server
    */
@@ -161,35 +204,23 @@ export class eVaultOpenADP {
   private async sendMetadataRefresh(updatedMetadata: Uint8Array): Promise<void> {
     try {
       console.log(`📡 Sending metadata refresh to server...`);
+      console.log(`📊 Updated metadata length: ${updatedMetadata.length} bytes`);
       
       // Convert metadata to base64 for JSON transport
       const metadataBase64 = btoa(String.fromCharCode.apply(null, Array.from(updatedMetadata)));
+      console.log(`📦 Metadata base64 length: ${metadataBase64.length} characters`);
+      console.log(`📦 Metadata preview: ${metadataBase64.substring(0, 100)}...`);
       
-      // Get JWT token from localStorage
-      const token = localStorage.getItem('jwt_token');
-      if (!token) {
-        console.log(`⚠️  No JWT token found - cannot send metadata refresh`);
-        return;
-      }
+      console.log(`📤 Sending refresh request to /api/vault/refresh...`);
       
-      // Send to server's refresh endpoint
-      const response = await fetch('/api/vault/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          updated_metadata: metadataBase64,
-        }),
+      // Use apiClient which handles NextAuth authentication properly
+      const { apiClient } = await import('../lib/api-client');
+      
+      const result = await apiClient.post<{ success: boolean; error?: string }>('/api/vault/refresh', {
+        updated_metadata: metadataBase64,
       });
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`Server error: ${error.error || response.statusText}`);
-      }
-      
-      const result = await response.json();
+      console.log(`📥 Server response:`, result);
       
       if (result.success) {
         console.log(`✅ Metadata refresh successful - server updated two-slot storage`);
@@ -201,6 +232,58 @@ export class eVaultOpenADP {
       // Don't throw - this is not a critical failure for the user
       // The vault will still work, but the metadata won't be refreshed
     }
+  }
+
+  private vaultState: {
+    publicKey: Uint8Array | null;
+    privateKey: Uint8Array | null;
+    vaultId: string | null;
+  } = {
+    publicKey: null,
+    privateKey: null,
+    vaultId: null,
+  };
+
+  async clearAllKeys(): Promise<void> {
+    console.log('🗑️ Clearing all keys and vault data...');
+    
+    // Clear all stored keys
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('evault_public_key');
+      localStorage.removeItem('evault_private_key');
+      localStorage.removeItem('evault_vault_id');
+      localStorage.removeItem('evault_vault_status');
+      localStorage.removeItem('evault_openadp_metadata');
+      sessionStorage.removeItem('evault_private_key');
+      
+      // Clear any other potential keys
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('evault_')) {
+          localStorage.removeItem(key);
+        }
+      }
+      
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith('evault_')) {
+          sessionStorage.removeItem(key);
+        }
+      }
+    }
+    
+    // Clear in-memory state
+    this.vaultState.publicKey = null;
+    this.vaultState.privateKey = null;
+    this.vaultState.vaultId = null;
+    
+    console.log('✅ All keys and vault data cleared');
+  }
+
+  async lockVault(): Promise<void> {
+    const { clearCachedPrivateKey } = await import('./hpke.js');
+    clearCachedPrivateKey();
+    console.log('🔒 Vault locked - cleared private key from memory');
   }
 }
 
@@ -373,16 +456,6 @@ export class eVaultCrypto {
 }
 
 /**
- * Lock vault - clear private key from memory (public key stays for adding entries)
- * SECURITY: Only removes decryption capability, preserves ability to add entries
- */
-export async function lockVault() {
-  const { clearCachedPrivateKey } = await import('./hpke.js');
-  clearCachedPrivateKey();
-  console.log('🔒 Vault locked - cleared private key from memory');
-}
-
-/**
  * Check if vault is unlocked (private key available for decryption)
  */
 export async function isVaultUnlocked(): Promise<boolean> {
@@ -395,6 +468,10 @@ export async function isVaultUnlocked(): Promise<boolean> {
  * SECURITY: Full cleanup on user logout
  */
 export async function clearAllKeys() {
+  // Use the class method for thorough cleanup
+  await openadp.clearAllKeys();
+  
+  // Also clear HPKE keys
   const { clearStoredPublicKey, clearCachedPrivateKey } = await import('./hpke.js');
   clearStoredPublicKey(); // Clear public key from localStorage
   clearCachedPrivateKey(); // Clear private key from memory
@@ -434,4 +511,15 @@ export function clearCachedKey() {
 
 // Global instances
 export const openadp = new eVaultOpenADP();
-export const crypto_service = new eVaultCrypto(); 
+export const crypto_service = new eVaultCrypto();
+
+/**
+ * Lock vault - clear private key from memory (public key stays for adding entries)
+ * SECURITY: Only removes decryption capability, preserves ability to add entries
+ */
+export async function lockVault() {
+  const { clearCachedPrivateKey } = await import('./hpke.js');
+  clearCachedPrivateKey();
+  console.log('🔒 Vault locked - cleared private key from memory');
+}
+

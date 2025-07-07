@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { openadp, crypto_service } from '@/lib/openadp';
@@ -348,6 +348,43 @@ export default function VaultPage() {
     console.log('🔒 Vault locked - can still add entries, but need PIN to view/delete');
   };
 
+  const handleDeleteAccount = async () => {
+    if (!confirm('⚠️ WARNING: This will permanently delete your account, vault, and all entries. This cannot be undone. Are you sure?')) {
+      return;
+    }
+    
+    if (!confirm('🗑️ Final confirmation: Delete account and ALL data permanently?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('🗑️ Starting account deletion process...');
+
+      // Call server to delete account
+      await apiClient.delete('/api/user/delete');
+
+      console.log('✅ Account deleted from server');
+
+      // Clear all local storage and cached data
+      const { clearAllKeys } = await import('@/lib/openadp');
+      await clearAllKeys();
+      localStorage.removeItem('jwt_token');
+
+      console.log('✅ Cleared all local data');
+      console.log('🔄 Logging out to clear authentication state...');
+
+      // Force logout to clear OAuth session - this will recreate user on next login
+      await signOut({ redirect: true, callbackUrl: '/login' });
+      
+    } catch (error) {
+      console.error('❌ Failed to delete account:', error);
+      alert(`Failed to delete account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -438,33 +475,21 @@ export default function VaultPage() {
               )}
               
               {hasPrivateKey && (
-                <>
-                  <button
-                    onClick={handleLockVault}
-                    className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
-                  >
-                    Lock Vault (Clear Private Key)
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (confirm('Clear all keys? Entries will be hidden until you unlock again. They are NOT deleted from the server.')) {
-                        const { clearAllKeys } = await import('@/lib/openadp');
-                        await clearAllKeys();
-                        setPrivateKey(null);
-                        setHasPrivateKey(false);
-                        setIsUnlocked(false);
-                        setEntries([]); // Clear UI only - entries remain on server
-                        
-                        // Reload vault data to reflect the locked state
-                        await loadVaultData();
-                      }
-                    }}
-                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-                  >
-                    Complete Logout
-                  </button>
-                </>
+                <button
+                  onClick={handleLockVault}
+                  className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+                >
+                  Lock Vault (Clear Private Key)
+                </button>
               )}
+              
+              {/* Delete Account - Always available for account management */}
+              <button
+                onClick={handleDeleteAccount}
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+              >
+                Delete Account
+              </button>
             </div>
           </div>
 

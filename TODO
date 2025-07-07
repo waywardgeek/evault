@@ -1,6 +1,7 @@
 ✅ Remove public key from registration with server. (COMPLETED)
 
 Future improvements:
+* Make email a foreign key, make sure it is unique.
 * Add comprehensive error handling for network failures
 * Implement user session management and auto-logout
 * Add data export/import functionality

@@ -5,7 +5,7 @@
  * compatible with OpenADP servers.
  */
 
-import { NoiseNK, generateStaticKeyPair } from './noise-nk.js';
+import { NoiseNK, generateStaticKeyPair } from './noise-nk.browser.js';
 
 // Re-export main classes
 export { NoiseNK, generateStaticKeyPair };
@@ -49,4 +49,4 @@ export function createServer(staticKeyPair, prologue = new Uint8Array()) {
  * @version 0.1.3
  */
 
-export { register, recover, OcryptError } from './ocrypt.js'; 
+export { register, recover, recoverAndReregister, OcryptError } from './ocrypt.js'; 

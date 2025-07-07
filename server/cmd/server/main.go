@@ -140,8 +140,9 @@ func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *
 		protected.Use(handler.AuthMiddleware())
 		{
 			// User routes
-			protected.GET("user", handler.GetCurrentUser)        // Get current user info
-			protected.POST("user/refresh", handler.RefreshToken) // Refresh JWT token
+			protected.GET("user", handler.GetCurrentUser)          // Get current user info
+			protected.POST("user/refresh", handler.RefreshToken)   // Refresh JWT token
+			protected.DELETE("user/delete", handler.DeleteAccount) // Delete user account
 
 			// Vault routes (Phase 3)
 			protected.POST("vault/register", handler.RegisterVault)
