@@ -29,10 +29,10 @@ test.describe('eVault Homepage', () => {
   test('should display features section', async ({ page }) => {
     await page.goto('/');
 
-    // Check for features section based on actual content
-    await expect(page.getByText(/Secure Storage/i)).toBeVisible();
-    await expect(page.getByText(/Distributed Trust/i)).toBeVisible();
-    await expect(page.getByText(/Nation-State Resistant/i)).toBeVisible();
+    // Check for features section based on actual content - use headings for specificity
+    await expect(page.getByRole('heading', { name: /Secure Storage/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Distributed Trust/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Nation-State Resistant/i })).toBeVisible();
   });
 
   test('should have responsive design', async ({ page }) => {

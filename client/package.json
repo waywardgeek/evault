@@ -60,7 +60,12 @@
       "!src/**/*.d.ts"
     ],
     "transform": {
-      "^.+\\.(js|jsx)$": "babel-jest"
-    }
+      "^.+\\.(js|jsx)$": ["babel-jest", {
+        "presets": ["next/babel"]
+      }]
+    },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(@openadp|@hpke|@noble)/)"
+    ]
   }
 }
