@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"evault-server/internal/database"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,18 +33,25 @@ type RecoverVaultResponse struct {
 
 // RegisterVault handles vault registration - ONLY stores metadata from client
 func (h *Handler) RegisterVault(c *gin.Context) {
+	log.Printf("🔐 Processing vault registration request")
+
 	var req RegisterVaultRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("❌ Invalid request format: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
 
+	log.Printf("📊 Registration request: PIN length=%d, metadata length=%d", len(req.Pin), len(req.OpenADPMetadata))
+
 	// Validate PIN requirements
-	if len(req.Pin) < 6 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be at least 6 characters long"})
+	if len(req.Pin) < 4 {
+		log.Printf("❌ PIN too short: %d characters", len(req.Pin))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be at least 4 characters long"})
 		return
 	}
 	if len(req.Pin) > 128 {
+		log.Printf("❌ PIN too long: %d characters", len(req.Pin))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be less than 128 characters"})
 		return
 	}
@@ -51,25 +59,31 @@ func (h *Handler) RegisterVault(c *gin.Context) {
 	// Get user from context
 	user, exists := c.Get("user")
 	if !exists {
+		log.Printf("❌ User not found in context")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
 	userModel := user.(*database.User)
+	log.Printf("👤 Processing registration for user: %s", userModel.Email)
 
 	// Check if user already has a vault
 	if userModel.OpenADPMetadata != nil {
+		log.Printf("⚠️  User %s already has a vault registered", userModel.Email)
 		c.JSON(http.StatusConflict, gin.H{"error": "User already has a vault registered"})
 		return
 	}
 
 	// SECURITY: Server just stores the metadata provided by client
 	// Client has already done OpenADP registration and derived keys
+	log.Printf("💾 Storing OpenADP metadata for user: %s", userModel.Email)
 	if err := h.db.UpdateUserOpenADPMetadata(userModel.UserID, req.OpenADPMetadata); err != nil {
+		log.Printf("❌ Failed to save vault metadata for user %s: %v", userModel.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save vault metadata"})
 		return
 	}
 
+	log.Printf("✅ Successfully registered vault for user: %s", userModel.Email)
 	c.JSON(http.StatusOK, RegisterVaultResponse{
 		Success: true,
 	})
@@ -84,8 +98,8 @@ func (h *Handler) RecoverVault(c *gin.Context) {
 	}
 
 	// Validate PIN requirements
-	if len(req.Pin) < 6 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be at least 6 characters long"})
+	if len(req.Pin) < 4 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "PIN must be at least 4 characters long"})
 		return
 	}
 	if len(req.Pin) > 128 {

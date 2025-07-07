@@ -11,6 +11,7 @@ interface VaultEntry {
   name: string;
   hpkeBlob: string;
   decryptedSecret?: string;
+  isDecrypting?: boolean; // Track decryption state
 }
 
 export default function VaultPage() {
@@ -24,6 +25,8 @@ export default function VaultPage() {
   const [showRegisterVault, setShowRegisterVault] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [privateKey, setPrivateKey] = useState<Uint8Array | null>(null);
+  const [hasPrivateKey, setHasPrivateKey] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -45,6 +48,8 @@ export default function VaultPage() {
   useEffect(() => {
     const cachedKey = getCachedPublicKey();
     setIsUnlocked(!!cachedKey);
+    // Note: Private key is only stored in memory during the session
+    // After page reload, user needs to enter PIN again to view secrets
   }, []);
 
   const loadVaultData = async () => {
@@ -72,28 +77,61 @@ export default function VaultPage() {
 
   const handleRegisterVault = async (pin: string) => {
     try {
+      console.log('🚀 Starting vault registration process...');
+      console.log(`📱 PIN length: ${pin.length}`);
+      console.log(`👤 User ID: ${session?.serverUser?.user_id}`);
+      
       setLoading(true);
       
       // SECURITY: Client handles ALL OpenADP operations directly
-      const { metadata } = await openadp.registerNewVault(session!.serverUser!.user_id, pin);
+      console.log('🔄 Calling OpenADP registration...');
+      const { metadata, privateKey } = await openadp.registerNewVault(session!.serverUser!.user_id, pin);
+      
+      console.log('✅ OpenADP registration completed successfully');
+      console.log(`📦 Metadata length: ${metadata.length} characters`);
+      console.log(`📦 Metadata preview: ${metadata.substring(0, 100)}...`);
+      console.log(`🔑 Private key received: ${privateKey.length} bytes`);
       
       // Register with server - SECURITY: Only send metadata, no OpenADP calls by server
-      await apiClient.post('/api/vault/register', {
+      console.log('🌐 Sending registration data to server...');
+      const registrationPayload = {
         pin: pin, // Server validates PIN but doesn't call OpenADP
         openadp_metadata: metadata
-      });
+      };
+      console.log(`📤 Payload: pin=${pin.length} chars, metadata=${metadata.length} chars`);
       
-      // SECURITY: Public key is now stored locally during OpenADP registration
+      const serverResponse = await apiClient.post('/api/vault/register', registrationPayload);
+      
+      console.log('✅ Server registration completed successfully');
+      console.log(`📥 Server response:`, serverResponse);
+      
+      // SECURITY: Store private key in memory for decryption (Level 2 authentication)
+      setPrivateKey(privateKey);
+      setHasPrivateKey(true);
+      
+      // SECURITY: Public key is now stored locally during OpenADP registration (Level 1 authentication)
       setIsUnlocked(true);
       
       // Reload vault data
+      console.log('🔄 Reloading vault data...');
       await loadVaultData();
+      
+      // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
+      console.log('✅ Vault registered successfully - private key available for on-demand decryption');
+      
       setShowRegisterVault(false);
       
-      alert('Vault registered successfully! You can now add entries without entering your PIN.');
+      console.log('🎉 Vault registration completed successfully!');
+      alert('Vault registered successfully! You can now add entries and view secrets.');
     } catch (error) {
-      console.error('Failed to register vault:', error);
-      alert('Failed to register vault. Please try again.');
+      console.error('❌ Vault registration failed:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        error: error
+      });
+      alert(`Failed to register vault: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -116,29 +154,58 @@ export default function VaultPage() {
         pin
       );
       
-      // SECURITY: Public key is now stored locally during OpenADP recovery
+      // Store private key in memory for decryption (Level 2 authentication)
+      setPrivateKey(privateKey);
+      setHasPrivateKey(true);
+      
+      // SECURITY: Public key is now stored locally during OpenADP recovery (Level 1 authentication)
       setIsUnlocked(true);
       setShowPinPrompt(false);
       
-      // Decrypt all entries
-      const decryptedEntries = await Promise.all(
-        entries.map(async (entry) => {
-          try {
-            const { secret } = await crypto_service.decryptEntry(entry.hpkeBlob, privateKey);
-            return { ...entry, decryptedSecret: secret };
-          } catch (error) {
-            console.error(`Failed to decrypt entry ${entry.name}:`, error);
-            return entry;
-          }
-        })
-      );
-      
-      setEntries(decryptedEntries);
+      // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
+      console.log('✅ Vault unlocked successfully - private key available for on-demand decryption');
     } catch (error) {
       console.error('Failed to unlock vault:', error);
       alert('Failed to unlock vault. Please check your PIN.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Decrypt individual entry on-demand
+  const handleDecryptEntry = async (entryIndex: number) => {
+    if (!privateKey) {
+      alert('Please enter your PIN first to decrypt entries.');
+      return;
+    }
+
+    try {
+      // Set decrypting state
+      setEntries(prev => prev.map((entry, index) => 
+        index === entryIndex ? { ...entry, isDecrypting: true } : entry
+      ));
+
+      const entry = entries[entryIndex];
+      console.log(`🔓 Decrypting entry: ${entry.name}`);
+      
+      const { secret } = await crypto_service.decryptEntry(entry.hpkeBlob, privateKey);
+      
+      // Update the specific entry with decrypted secret
+      setEntries(prev => prev.map((entry, index) => 
+        index === entryIndex 
+          ? { ...entry, decryptedSecret: secret, isDecrypting: false }
+          : entry
+      ));
+
+      console.log(`✅ Successfully decrypted entry: ${entry.name}`);
+    } catch (error) {
+      console.error('Failed to decrypt entry:', error);
+      alert('Failed to decrypt entry. Please try again.');
+      
+      // Clear decrypting state on error
+      setEntries(prev => prev.map((entry, index) => 
+        index === entryIndex ? { ...entry, isDecrypting: false } : entry
+      ));
     }
   };
 
@@ -200,9 +267,20 @@ export default function VaultPage() {
   };
 
   const handleLockVault = () => {
+    // Clear private key from memory (Level 2 authentication)
+    setPrivateKey(null);
+    setHasPrivateKey(false);
+    
+    // Clear public key from localStorage (Level 1 authentication)
     clearCachedKey(); // SECURITY: Clears locally stored HPKE keys
     setIsUnlocked(false);
-    setEntries(entries.map(entry => ({ name: entry.name, hpkeBlob: entry.hpkeBlob })));
+    
+    // Remove decrypted secrets from entries (keep encrypted blobs)
+    setEntries(entries.map(entry => ({ 
+      name: entry.name, 
+      hpkeBlob: entry.hpkeBlob,
+      // Remove decryptedSecret and isDecrypting properties
+    })));
   };
 
   if (status === 'loading' || loading) {
@@ -250,9 +328,15 @@ export default function VaultPage() {
                   </span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-sm text-gray-600">Vault Unlocked:</span>
-                  <span className={`ml-2 text-sm font-medium ${isUnlocked ? 'text-green-600' : 'text-orange-600'}`}>
-                    {isUnlocked ? '✓ Yes (Frictionless Adding Enabled)' : '✗ No (PIN Required)'}
+                  <span className="text-sm text-gray-600">Level 1 - Can Add Entries:</span>
+                  <span className={`ml-2 text-sm font-medium ${isUnlocked ? 'text-green-600' : 'text-red-600'}`}>
+                    {isUnlocked ? '✓ Yes (Public Key Available)' : '✗ No (Need PIN)'}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-sm text-gray-600">Level 2 - Can View Secrets:</span>
+                  <span className={`ml-2 text-sm font-medium ${hasPrivateKey ? 'text-green-600' : 'text-orange-600'}`}>
+                    {hasPrivateKey ? '✓ Yes (Private Key in Memory)' : '✗ No (Need PIN)'}
                   </span>
                 </div>
               </div>
@@ -279,12 +363,21 @@ export default function VaultPage() {
                 </button>
               )}
               
-              {isUnlocked && (
+              {vaultStatus?.has_vault && isUnlocked && !hasPrivateKey && (
                 <button
-                  onClick={handleLockVault}
+                  onClick={() => setShowPinPrompt(true)}
                   className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
                 >
-                  Lock Vault
+                  Enter PIN to View Secrets
+                </button>
+              )}
+              
+              {hasPrivateKey && (
+                <button
+                  onClick={handleLockVault}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                >
+                  Lock Vault (Clear All Keys)
                 </button>
               )}
             </div>
@@ -298,9 +391,9 @@ export default function VaultPage() {
                 <button
                   onClick={() => setShowAddEntry(true)}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                  disabled={!getCachedPublicKey()}
+                  disabled={!isUnlocked}
                 >
-                  Add Entry {!getCachedPublicKey() && '(PIN Required)'}
+                  Add Entry {!isUnlocked ? '(PIN Required)' : ''}
                 </button>
               </div>
 
@@ -316,13 +409,53 @@ export default function VaultPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-gray-900">{entry.name}</h3>
                           {entry.decryptedSecret ? (
-                            <pre className="mt-2 text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded">
-                              {entry.decryptedSecret}
-                            </pre>
+                            <div className="mt-2">
+                              <pre className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded">
+                                {entry.decryptedSecret}
+                              </pre>
+                              <button
+                                onClick={() => {
+                                  // Hide the decrypted secret
+                                  setEntries(prev => prev.map((e, i) => 
+                                    i === index ? { ...e, decryptedSecret: undefined } : e
+                                  ));
+                                }}
+                                className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+                              >
+                                🙈 Hide Secret
+                              </button>
+                            </div>
                           ) : (
-                            <p className="mt-2 text-sm text-gray-500">
-                              🔒 Encrypted - Enter PIN to view
-                            </p>
+                            <div className="mt-2 flex items-center space-x-2">
+                              <span className="text-sm text-gray-500">🔒 Encrypted</span>
+                              {hasPrivateKey && (
+                                <button
+                                  onClick={() => handleDecryptEntry(index)}
+                                  disabled={entry.isDecrypting}
+                                  className="text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50 flex items-center space-x-1"
+                                >
+                                  {entry.isDecrypting ? (
+                                    <>
+                                      <span className="animate-spin">⏳</span>
+                                      <span>Decrypting...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span>👁️</span>
+                                      <span>View Secret</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                              {!hasPrivateKey && (
+                                <button
+                                  onClick={() => setShowPinPrompt(true)}
+                                  className="text-sm text-orange-600 hover:text-orange-800 underline"
+                                >
+                                  Enter PIN to view
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                         <button

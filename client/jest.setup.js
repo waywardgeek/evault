@@ -67,4 +67,47 @@ const localStorageMock = {
   removeItem: jest.fn(),
   clear: jest.fn(),
 };
-global.localStorage = localStorageMock; 
+global.localStorage = localStorageMock;
+
+// Mock TextEncoder/TextDecoder for tests
+global.TextEncoder = class TextEncoder {
+  encode(input) {
+    return new Uint8Array(Buffer.from(input, 'utf8'));
+  }
+};
+
+global.TextDecoder = class TextDecoder {
+  decode(input) {
+    return Buffer.from(input).toString('utf8');
+  }
+};
+
+// Mock btoa/atob for base64 encoding
+global.btoa = (str) => Buffer.from(str, 'binary').toString('base64');
+global.atob = (str) => {
+  // Check if string contains only valid base64 characters
+  const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+  if (!base64Regex.test(str)) {
+    throw new Error('Invalid base64 string');
+  }
+  return Buffer.from(str, 'base64').toString('binary');
+};
+
+// Mock crypto.getRandomValues and crypto.subtle for tests
+global.crypto = {
+  getRandomValues: (arr) => {
+    for (let i = 0; i < arr.length; i++) {
+      arr[i] = Math.floor(Math.random() * 256);
+    }
+    return arr;
+  },
+  subtle: {
+    digest: async (algorithm, data) => {
+      // Mock SHA-256 implementation using Node.js crypto
+      const crypto = require('crypto');
+      const hash = crypto.createHash('sha256');
+      hash.update(data);
+      return hash.digest();
+    }
+  }
+}; 

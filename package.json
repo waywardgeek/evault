@@ -36,6 +36,8 @@
     "tests"
   ],
   "dependencies": {
+    "@hpke/core": "^1.7.2",
+    "@hpke/dhkem-x25519": "^1.6.2",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
@@ -52,4 +54,4 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   }
-} 
+}

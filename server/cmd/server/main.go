@@ -179,6 +179,15 @@ func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *
 				},
 			})
 		})
+
+		// Debug endpoint to show Google Client ID (for debugging OAuth issues)
+		api.GET("/debug/config", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"google_client_id":         getEnv("GOOGLE_CLIENT_ID", "NOT_SET"),
+				"google_client_secret_set": getEnv("GOOGLE_CLIENT_SECRET", "") != "",
+				"environment":              getEnv("ENV", "development"),
+			})
+		})
 	}
 
 	return router

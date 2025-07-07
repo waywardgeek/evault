@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -20,11 +21,10 @@ type AuthResponse struct {
 }
 
 type CallbackRequest struct {
-	Code        string `json:"code,omitempty"`         // For direct OAuth code flow
-	State       string `json:"state,omitempty"`        // For direct OAuth code flow
-	AccessToken string `json:"access_token,omitempty"` // For NextAuth token exchange
-	IDToken     string `json:"id_token,omitempty"`     // For NextAuth token exchange
-	User        struct {
+	Code    string `json:"code,omitempty"`     // For direct OAuth code flow
+	State   string `json:"state,omitempty"`    // For direct OAuth code flow
+	IDToken string `json:"id_token,omitempty"` // For NextAuth token exchange (changed from access_token)
+	User    struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
 		Name  string `json:"name"`
@@ -39,6 +39,14 @@ type CallbackResponse struct {
 
 type UserResponse struct {
 	User *database.User `json:"user"`
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // GetAuthURL generates Google OAuth URL
@@ -83,20 +91,36 @@ func (h *Handler) HandleCallback(c *gin.Context) {
 
 	var userInfo *database.User
 
-	// Handle NextAuth token exchange flow
-	if req.AccessToken != "" && req.User.Email != "" {
-		// Validate the access token with Google (for security)
-		if err := h.authService.ValidateGoogleAccessToken(c.Request.Context(), req.AccessToken); err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("Invalid access token: %v", err)})
+	// Handle NextAuth ID token exchange flow
+	if req.IDToken != "" && req.User.Email != "" {
+		// Log for debugging
+		log.Printf("DEBUG: Processing NextAuth ID token exchange for user: %s", req.User.Email)
+		log.Printf("DEBUG: ID token length: %d", len(req.IDToken))
+		log.Printf("DEBUG: ID token starts with: %s", req.IDToken[:min(50, len(req.IDToken))])
+
+		// Validate the ID token with Google (for security)
+		claims, err := h.authService.ValidateGoogleIDToken(c.Request.Context(), req.IDToken)
+		if err != nil {
+			log.Printf("ERROR: ID token validation failed: %v", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("Invalid ID token: %v", err)})
 			return
 		}
 
-		// Create user from NextAuth provided data
+		log.Printf("DEBUG: ID token validation successful for user: %s", claims.Email)
+
+		// Verify the email matches what NextAuth provided
+		if claims.Email != req.User.Email {
+			log.Printf("ERROR: Email mismatch - token: %s, provided: %s", claims.Email, req.User.Email)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Email mismatch between ID token and user info"})
+			return
+		}
+
+		// Create user from NextAuth provided data, but use claims for verification
 		userInfo = &database.User{
-			UserID:       req.User.ID,
-			Email:        req.User.Email,
+			UserID:       claims.Subject, // Use subject from verified token
+			Email:        claims.Email,   // Use email from verified token
 			AuthProvider: "google",
-			Verified:     true, // Google OAuth provides verified emails
+			Verified:     claims.EmailVerified,
 		}
 	} else if req.Code != "" {
 		// Handle direct OAuth code flow

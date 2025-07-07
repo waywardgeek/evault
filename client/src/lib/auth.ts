@@ -11,9 +11,9 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       // Send the OAuth code to our backend server
-      if (account?.provider === 'google' && account.access_token) {
+      if (account?.provider === 'google' && account.id_token) {
         try {
-          // Exchange Google access token for our server JWT by calling the real Go server
+          // Exchange Google ID token for our server JWT by calling the real Go server
           const serverURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
           const response = await fetch(`${serverURL}/api/auth/callback`, {
             method: 'POST',
@@ -21,7 +21,6 @@ export const authOptions: AuthOptions = {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              access_token: account.access_token,
               id_token: account.id_token,
               user: {
                 id: user.id,
@@ -39,7 +38,8 @@ export const authOptions: AuthOptions = {
             account.serverUser = data.user;
             return true;
           } else {
-            console.error('Server authentication failed:', await response.text());
+            const errorText = await response.text();
+            console.error('Server authentication failed:', errorText);
           }
         } catch (error) {
           console.error('Failed to exchange token with server:', error);
