@@ -7,7 +7,7 @@ import type {
   UserResponse,
   RefreshTokenResponse,
   ErrorResponse 
-} from '../../../shared/types/api'
+} from '@/types/api'
 
 class ApiClient {
   private baseURL: string

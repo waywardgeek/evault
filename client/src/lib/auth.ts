@@ -59,7 +59,7 @@ export const authOptions: AuthOptions = {
       // Send server token and user data to the client
       if (token.serverToken) {
         session.serverToken = token.serverToken as string;
-        session.serverUser = token.serverUser;
+        session.serverUser = token.serverUser as any;
       }
       return session;
     },
