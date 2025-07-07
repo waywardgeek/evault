@@ -9,7 +9,7 @@
   "env": {
     "NEXTAUTH_URL": "https://evault-app.vercel.app",
     "NEXTAUTH_SECRET": "your-nextauth-secret-change-this",
-    "NEXT_PUBLIC_API_URL": "https://evault-server-xxxxxxx-uc.a.run.app"
+    "NEXT_PUBLIC_API_URL": "https://api.evaultapp.com"
   },
   "build": {
     "env": {
@@ -47,7 +47,7 @@
   "rewrites": [
     {
       "source": "/api/server/(.*)",
-      "destination": "https://evault-server-xxxxxxx-uc.a.run.app/api/$1"
+      "destination": "https://api.evaultapp.com/api/$1"
     }
   ]
 } 
