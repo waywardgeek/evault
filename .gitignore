@@ -88,4 +88,4 @@ coverage/
 jest_cache/
 
 # Playwright cache
-.playwright/ 
+.playwright/ google-cloud-sdk/
