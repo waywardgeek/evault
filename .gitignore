@@ -88,4 +88,103 @@ coverage/
 jest_cache/
 
 # Playwright cache
-.playwright/ google-cloud-sdk/
+.playwright/
+
+# Cloud SDKs and Development Tools (NEVER COMMIT THESE!)
+google-cloud-sdk/
+aws-cli/
+azure-cli/
+gcloud/
+kubectl/
+terraform/
+helm/
+docker-desktop/
+
+# Package Manager Caches
+.npm/
+.yarn/
+.pnpm/
+.rushstack/
+.rush/
+bower_components/
+
+# IDE and Editor Files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+.metadata/
+
+# Security and Sensitive Files
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+*.jks
+*.keystore
+**/secrets/
+**/private/
+credentials.json
+service-account*.json
+auth.json
+
+# Development Configuration
+.local
+.dev
+.development
+.staging
+.production
+config.local.*
+
+# Backup files
+*.backup
+*.bak
+*.old
+*.orig
+*.save
+*.swp
+*.tmp
+
+# System files
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+Desktop.ini
+$RECYCLE.BIN/
+
+# Application specific
+dist/
+build/
+.vercel/
+.netlify/
+.firebase/
+.serverless/
+.nuxt/
+.output/
+.nitro/
+.cache/
+.parcel-cache/
+.next/
+.svelte-kit/
+.turbo/
+
+# Deployment artifacts
+*.tar.gz
+*.tgz
+*.zip
+*.war
+*.jar
+*.ear
+*.sar
+*.class
