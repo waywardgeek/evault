@@ -50,6 +50,7 @@ export default function VaultPage() {
       const { hasLocalPublicKey } = await import('@/lib/openadp');
       const hasKey = await hasLocalPublicKey();
       setIsUnlocked(hasKey);
+      console.log('🔍 Initial state check:', { hasLocalPublicKey: hasKey });
     };
     checkPublicKey();
     // Note: Private key is only stored in memory during the session
@@ -145,18 +146,32 @@ export default function VaultPage() {
     try {
       setLoading(true);
       
+      console.log('🔓 Starting vault unlock process...');
+      console.log(`📱 PIN: ${pin}`);
+      
       // SECURITY: Get metadata from server, but client handles OpenADP recovery
+      console.log('🌐 Requesting metadata from server...');
       const recoverResponse = await apiClient.post<{ success: boolean; openadp_metadata: string }>('/api/vault/recover', { pin });
+      
+      console.log('📥 Server response:', recoverResponse);
       
       if (!recoverResponse.openadp_metadata) {
         throw new Error('No vault metadata returned from server');
       }
       
+      console.log(`📦 Metadata received: ${recoverResponse.openadp_metadata.length} characters`);
+      console.log(`📦 Metadata preview: ${recoverResponse.openadp_metadata.substring(0, 100)}...`);
+      
       // SECURITY: Client handles OpenADP recovery directly - no server OpenADP calls
+      console.log('🔄 Calling OpenADP recovery...');
       const { privateKey, remaining } = await openadp.recoverVaultKey(
         recoverResponse.openadp_metadata,
         pin
       );
+      
+      console.log('✅ OpenADP recovery successful');
+      console.log(`🔑 Private key recovered: ${privateKey.length} bytes`);
+      console.log(`⚠️ Remaining attempts: ${remaining}`);
       
       // Store private key in memory for decryption (Level 2 authentication)
       setPrivateKey(privateKey);
@@ -168,9 +183,30 @@ export default function VaultPage() {
       
       // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
       console.log('✅ Vault unlocked successfully - private key available for on-demand decryption');
+      alert('Vault unlocked successfully!');
     } catch (error) {
-      console.error('Failed to unlock vault:', error);
-      alert('Failed to unlock vault. Please check your PIN.');
+      console.error('❌ Failed to unlock vault:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        error: error
+      });
+      
+      // More specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid PIN')) {
+          alert(`Wrong PIN. ${error.message}`);
+        } else if (error.message.includes('locked')) {
+          alert('Account locked due to too many failed attempts. Please try again later.');
+        } else if (error.message.includes('metadata')) {
+          alert('Vault metadata issue. You may need to re-register your vault.');
+        } else {
+          alert(`Failed to unlock vault: ${error.message}`);
+        }
+      } else {
+        alert('Failed to unlock vault. Please check your PIN and try again.');
+      }
     } finally {
       setLoading(false);
     }
