@@ -248,10 +248,27 @@ export default function VaultPage() {
     try {
       setLoading(true);
       
-      // TODO: Implement proper deletion with pre-hash validation
+      // Get private key for decryption
+      if (!privateKey) {
+        alert('Private key not available. Please enter your PIN to unlock vault operations.');
+        setShowPinPrompt(true);
+        return;
+      }
+      
+      // Find the entry to delete
+      const entry = entries.find(e => e.name === name);
+      if (!entry) {
+        throw new Error('Entry not found');
+      }
+      
+      // Extract deletion pre-hash from encrypted entry
+      const { getDeletionPreHash } = await import('@/lib/hpke.js');
+      const { deletionPreHash } = await getDeletionPreHash(entry.hpkeBlob, privateKey);
+      
+      // Send delete request with proper deletion pre-hash
       await apiClient.delete('/api/entries', {
         name,
-        deletion_pre_hash: 'placeholder' // This needs proper implementation
+        deletion_pre_hash: deletionPreHash
       });
       
       // Reload entries
@@ -260,20 +277,21 @@ export default function VaultPage() {
       alert('Entry deleted successfully!');
     } catch (error) {
       console.error('Failed to delete entry:', error);
-      alert('Failed to delete entry. Please try again.');
+      alert(`Failed to delete entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLockVault = () => {
+  const handleLockVault = async () => {
     // Clear private key from memory (Level 2 authentication)
+    // PUBLIC KEY STAYS in localStorage for adding entries!
+    const { lockVault } = await import('@/lib/openadp');
+    await lockVault(); // Only clears private key from memory
+    
     setPrivateKey(null);
     setHasPrivateKey(false);
-    
-    // Clear public key from localStorage (Level 1 authentication)
-    clearCachedKey(); // SECURITY: Clears locally stored HPKE keys
-    setIsUnlocked(false);
+    // Note: isUnlocked stays true because public key remains for adding entries
     
     // Remove decrypted secrets from entries (keep encrypted blobs)
     setEntries(entries.map(entry => ({ 
@@ -281,6 +299,8 @@ export default function VaultPage() {
       hpkeBlob: entry.hpkeBlob,
       // Remove decryptedSecret and isDecrypting properties
     })));
+    
+    console.log('🔒 Vault locked - can still add entries, but need PIN to view/delete');
   };
 
   if (status === 'loading' || loading) {
@@ -373,12 +393,29 @@ export default function VaultPage() {
               )}
               
               {hasPrivateKey && (
-                <button
-                  onClick={handleLockVault}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-                >
-                  Lock Vault (Clear All Keys)
-                </button>
+                <>
+                  <button
+                    onClick={handleLockVault}
+                    className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+                  >
+                    Lock Vault (Clear Private Key)
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (confirm('Clear all keys? You will need to enter PIN to add entries again.')) {
+                        const { clearAllKeys } = await import('@/lib/openadp');
+                        await clearAllKeys();
+                        setPrivateKey(null);
+                        setHasPrivateKey(false);
+                        setIsUnlocked(false);
+                        setEntries([]);
+                      }
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                  >
+                    Complete Logout
+                  </button>
+                </>
               )}
             </div>
           </div>

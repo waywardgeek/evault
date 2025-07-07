@@ -341,13 +341,51 @@ export function getStoredPublicKey() {
 }
 
 /**
- * Clear locally stored public key (when locking vault)
+ * Clear ALL stored keys (for complete vault reset/logout)
  */
 export function clearStoredPublicKey() {
   localStorage.removeItem('evault-hpke-public-key-v2');
   // Also clear legacy key if it exists
   localStorage.removeItem('evault-hpke-public-key');
   console.log(`🔒 Cleared locally stored HPKE keys`);
+}
+
+// In-memory storage for private key (cleared on vault lock)
+let cachedPrivateKey = null;
+
+/**
+ * Store private key in memory temporarily (for decryption/deletion operations)
+ * 
+ * @param {Uint8Array} privateKey - X25519 private key
+ */
+export function cachePrivateKey(privateKey) {
+  cachedPrivateKey = privateKey;
+  console.log(`🔐 Cached private key in memory for vault operations`);
+}
+
+/**
+ * Get cached private key from memory
+ * 
+ * @returns {Uint8Array|null} - X25519 private key or null if not cached
+ */
+export function getCachedPrivateKey() {
+  return cachedPrivateKey;
+}
+
+/**
+ * Clear private key from memory (when locking vault)
+ * Public key remains in localStorage for adding entries
+ */
+export function clearCachedPrivateKey() {
+  cachedPrivateKey = null;
+  console.log(`🔒 Cleared private key from memory (vault locked)`);
+}
+
+/**
+ * Check if vault is unlocked (private key available)
+ */
+export function isVaultUnlocked() {
+  return cachedPrivateKey !== null;
 }
 
 /**

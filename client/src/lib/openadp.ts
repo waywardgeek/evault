@@ -41,12 +41,15 @@ export class eVaultOpenADP {
       console.log(`🔑 Deriving HPKE keypair from long-term secret...`);
       const { publicKey, privateKey } = await this.deriveHPKEKeypair(longTermSecret);
       
-      // Store public key locally for this device
-      console.log(`💾 Storing public key locally for this device...`);
+      // Store public key permanently in localStorage (enables adding entries)
+      console.log(`💾 Storing public key permanently in localStorage...`);
       this.storePublicKeyLocally(publicKey);
       
-      console.log(`🔑 Derived and stored HPKE public key locally`);
-      console.log(`🔑 Returning private key for immediate decryption capability`);
+      // Cache private key in memory for vault operations (decrypt/delete)
+      console.log(`🔐 Caching private key in memory for vault operations...`);
+      this.cachePrivateKey(privateKey);
+      
+      console.log(`🔑 Derived and stored HPKE keys (public permanent, private temporary)`);
       
       // Convert metadata to base64
       const metadataBase64 = btoa(String.fromCharCode.apply(null, Array.from(metadata)));
@@ -54,7 +57,7 @@ export class eVaultOpenADP {
       
       return {
         metadata: metadataBase64,
-        privateKey: privateKey // Return private key for immediate decryption
+        privateKey: privateKey // Return private key for immediate use
       };
     } catch (error) {
       const err = error as Error;
@@ -94,10 +97,13 @@ export class eVaultOpenADP {
       // Derive HPKE keypair from recovered long-term secret
       const { publicKey, privateKey } = await this.deriveHPKEKeypair(result.secret);
       
-      // Store public key locally for this device
+      // Store public key permanently in localStorage (enables adding entries)
       this.storePublicKeyLocally(publicKey);
       
-      console.log(`🔑 Derived and stored HPKE keys from recovered long-term secret`);
+      // Cache private key in memory for vault operations (decrypt/delete)
+      this.cachePrivateKey(privateKey);
+      
+      console.log(`🔑 Derived and stored HPKE keys from recovered long-term secret (public permanent, private temporary)`);
       
       return { 
         privateKey: privateKey, // Return the HPKE private key
@@ -127,6 +133,15 @@ export class eVaultOpenADP {
   private async storePublicKeyLocally(publicKey: Uint8Array) {
     const { storePublicKeyLocally } = await import('./hpke.js');
     storePublicKeyLocally(publicKey);
+  }
+
+  /**
+   * Cache private key in memory for vault operations
+   * SECURITY: Temporary storage, cleared on vault lock
+   */
+  private async cachePrivateKey(privateKey: Uint8Array) {
+    const { cachePrivateKey } = await import('./hpke.js');
+    cachePrivateKey(privateKey);
   }
 
   /**
@@ -307,19 +322,48 @@ export class eVaultCrypto {
 }
 
 /**
- * Clear locally cached keys when user logs out
- * SECURITY: Remove keys from local storage
+ * Lock vault - clear private key from memory (public key stays for adding entries)
+ * SECURITY: Only removes decryption capability, preserves ability to add entries
  */
-export function clearCachedKeys() {
-  localStorage.removeItem('evault-hpke-public-key');
-  console.log('🗑️ Cleared cached HPKE keys');
+export async function lockVault() {
+  const { clearCachedPrivateKey } = await import('./hpke.js');
+  clearCachedPrivateKey();
+  console.log('🔒 Vault locked - cleared private key from memory');
 }
 
 /**
- * Check if public key is available locally
+ * Check if vault is unlocked (private key available for decryption)
  */
-export function hasLocalPublicKey(): boolean {
-  return localStorage.getItem('evault-hpke-public-key') !== null;
+export async function isVaultUnlocked(): Promise<boolean> {
+  const { isVaultUnlocked } = await import('./hpke.js');
+  return isVaultUnlocked();
+}
+
+/**
+ * Complete logout - clear ALL keys from storage and memory
+ * SECURITY: Full cleanup on user logout
+ */
+export async function clearAllKeys() {
+  const { clearStoredPublicKey, clearCachedPrivateKey } = await import('./hpke.js');
+  clearStoredPublicKey(); // Clear public key from localStorage
+  clearCachedPrivateKey(); // Clear private key from memory
+  console.log('🗑️ Complete logout - cleared all HPKE keys');
+}
+
+/**
+ * Check if public key is available locally (enables adding entries)
+ */
+export async function hasLocalPublicKey(): Promise<boolean> {
+  const { getStoredPublicKey } = await import('./hpke.js');
+  return getStoredPublicKey() !== null;
+}
+
+/**
+ * Get cached private key for vault operations
+ */
+export async function getCachedPrivateKey(): Promise<Uint8Array | null> {
+  const { getCachedPrivateKey } = await import('./hpke.js');
+  return getCachedPrivateKey();
 }
 
 // Legacy functions - kept for compatibility but deprecated
@@ -333,7 +377,8 @@ export function getCachedPublicKey(): string | null {
 }
 
 export function clearCachedKey() {
-  clearCachedKeys();
+  console.warn('⚠️ clearCachedKey is deprecated - use lockVault() or clearAllKeys() instead');
+  lockVault();
 }
 
 // Global instances

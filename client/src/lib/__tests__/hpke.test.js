@@ -10,7 +10,11 @@ import {
   needsKeyMigration,
   clearLegacyKey,
   isHPKEv1Blob,
-  getDeletionPreHash
+  getDeletionPreHash,
+  cachePrivateKey,
+  getCachedPrivateKey,
+  clearCachedPrivateKey,
+  isVaultUnlocked
 } from '../hpke.js';
 
 describe('HPKE Core Functionality', () => {
@@ -68,6 +72,64 @@ describe('HPKE Core Functionality', () => {
       
       expect(getStoredPublicKey()).toBeNull();
       expect(localStorage.getItem('evault-hpke-public-key')).toBeNull();
+    });
+  });
+
+  describe('Private Key Memory Management', () => {
+    beforeEach(() => {
+      // Clear any cached private key before each test
+      clearCachedPrivateKey();
+    });
+
+    test('should cache and retrieve private key', () => {
+      const privateKey = new Uint8Array(32);
+      for (let i = 0; i < 32; i++) {
+        privateKey[i] = (i * 7) % 256; // Different pattern from public key
+      }
+      
+      // Initially no private key
+      expect(getCachedPrivateKey()).toBeNull();
+      expect(isVaultUnlocked()).toBe(false);
+      
+      // Cache private key
+      cachePrivateKey(privateKey);
+      
+      // Should now be available
+      const retrieved = getCachedPrivateKey();
+      expect(retrieved).toEqual(privateKey);
+      expect(isVaultUnlocked()).toBe(true);
+    });
+
+    test('should clear cached private key', () => {
+      const privateKey = new Uint8Array(32).fill(42);
+      
+      // Cache private key
+      cachePrivateKey(privateKey);
+      expect(getCachedPrivateKey()).toEqual(privateKey);
+      expect(isVaultUnlocked()).toBe(true);
+      
+      // Clear private key
+      clearCachedPrivateKey();
+      expect(getCachedPrivateKey()).toBeNull();
+      expect(isVaultUnlocked()).toBe(false);
+    });
+
+    test('should handle null private key gracefully', () => {
+      // Test null input
+      cachePrivateKey(null);
+      expect(getCachedPrivateKey()).toBeNull();
+      expect(isVaultUnlocked()).toBe(false);
+    });
+
+    test('should handle empty private key', () => {
+      const emptyKey = new Uint8Array(0);
+      
+      cachePrivateKey(emptyKey);
+      const retrieved = getCachedPrivateKey();
+      
+      expect(retrieved).toEqual(emptyKey);
+      expect(retrieved.length).toBe(0);
+      expect(isVaultUnlocked()).toBe(true); // Even empty key counts as "unlocked"
     });
   });
 
