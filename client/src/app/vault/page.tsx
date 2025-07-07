@@ -117,7 +117,7 @@ export default function VaultPage() {
       // SECURITY: Public key is now stored locally during OpenADP registration (Level 1 authentication)
       setIsUnlocked(true);
       
-      // Reload vault data
+      // Reload vault data to show the new vault status
       console.log('🔄 Reloading vault data...');
       await loadVaultData();
       
@@ -180,6 +180,9 @@ export default function VaultPage() {
       // SECURITY: Public key is now stored locally during OpenADP recovery (Level 1 authentication)
       setIsUnlocked(true);
       setShowPinPrompt(false);
+      
+      // Reload entries after successful unlock
+      await loadVaultData();
       
       // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
       console.log('✅ Vault unlocked successfully - private key available for on-demand decryption');
@@ -444,13 +447,16 @@ export default function VaultPage() {
                   </button>
                   <button
                     onClick={async () => {
-                      if (confirm('Clear all keys? You will need to enter PIN to add entries again.')) {
+                      if (confirm('Clear all keys? Entries will be hidden until you unlock again. They are NOT deleted from the server.')) {
                         const { clearAllKeys } = await import('@/lib/openadp');
                         await clearAllKeys();
                         setPrivateKey(null);
                         setHasPrivateKey(false);
                         setIsUnlocked(false);
-                        setEntries([]);
+                        setEntries([]); // Clear UI only - entries remain on server
+                        
+                        // Reload vault data to reflect the locked state
+                        await loadVaultData();
                       }
                     }}
                     className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
