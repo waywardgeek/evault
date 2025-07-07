@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
-import { openadp, crypto_service, getCachedPublicKey, cachePublicKey, clearCachedKey } from '@/lib/openadp';
+import { openadp, crypto_service } from '@/lib/openadp';
 import { VaultStatusResponse, ListEntriesResponse, GetEntriesResponse } from '@/../../shared/types/api';
 
 interface VaultEntry {
@@ -46,8 +46,12 @@ export default function VaultPage() {
 
   // Check if we have cached public key (unlocked state)
   useEffect(() => {
-    const cachedKey = getCachedPublicKey();
-    setIsUnlocked(!!cachedKey);
+    const checkPublicKey = async () => {
+      const { hasLocalPublicKey } = await import('@/lib/openadp');
+      const hasKey = await hasLocalPublicKey();
+      setIsUnlocked(hasKey);
+    };
+    checkPublicKey();
     // Note: Private key is only stored in memory during the session
     // After page reload, user needs to enter PIN again to view secrets
   }, []);
@@ -213,8 +217,10 @@ export default function VaultPage() {
     try {
       setLoading(true);
       
-      // Check if we have a locally stored public key
-      if (!getCachedPublicKey()) {
+      // Check if we have a locally stored public key (new HPKE implementation)
+      const { hasLocalPublicKey } = await import('@/lib/openadp');
+      if (!(await hasLocalPublicKey())) {
+        alert('No public key available. Please enter your PIN to unlock vault first.');
         setShowPinPrompt(true);
         return;
       }
@@ -236,7 +242,7 @@ export default function VaultPage() {
       alert('Entry added successfully!');
     } catch (error) {
       console.error('Failed to add entry:', error);
-      alert('Failed to add entry. Please try again.');
+      alert(`Failed to add entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
