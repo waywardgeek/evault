@@ -9,7 +9,7 @@ const nextConfig = {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     return [
       {
-        source: '/api/:path*',
+        source: '/api/server/:path*',
         destination: `${apiUrl}/api/:path*`,
       },
     ]
