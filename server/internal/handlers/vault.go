@@ -67,17 +67,24 @@ func (h *Handler) RegisterVault(c *gin.Context) {
 	userModel := user.(*database.User)
 	log.Printf("👤 Processing registration for user: %s", userModel.Email)
 
-	// Check if user already has a vault
-	if userModel.OpenADPMetadata != nil {
+	// Check if user already has a vault (check current metadata)
+	currentMetadata, err := h.db.GetCurrentOpenADPMetadata(userModel.UserID)
+	if err != nil {
+		log.Printf("❌ Failed to check existing metadata for user %s: %v", userModel.Email, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check vault status"})
+		return
+	}
+
+	if currentMetadata != nil {
 		log.Printf("⚠️  User %s already has a vault registered", userModel.Email)
 		c.JSON(http.StatusConflict, gin.H{"error": "User already has a vault registered"})
 		return
 	}
 
-	// SECURITY: Server just stores the metadata provided by client
+	// SECURITY: Server just stores the initial metadata provided by client
 	// Client has already done OpenADP registration and derived keys
-	log.Printf("💾 Storing OpenADP metadata for user: %s", userModel.Email)
-	if err := h.db.UpdateUserOpenADPMetadata(userModel.UserID, req.OpenADPMetadata); err != nil {
+	log.Printf("💾 Storing initial OpenADP metadata for user: %s", userModel.Email)
+	if err := h.db.SetInitialOpenADPMetadata(userModel.UserID, req.OpenADPMetadata); err != nil {
 		log.Printf("❌ Failed to save vault metadata for user %s: %v", userModel.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save vault metadata"})
 		return
@@ -116,16 +123,77 @@ func (h *Handler) RecoverVault(c *gin.Context) {
 
 	userModel := user.(*database.User)
 
+	// Get current metadata using two-slot system
+	currentMetadata, err := h.db.GetCurrentOpenADPMetadata(userModel.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get vault metadata"})
+		return
+	}
+
 	// Check if user has a vault
-	if userModel.OpenADPMetadata == nil {
+	if currentMetadata == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User has no vault registered"})
 		return
 	}
 
-	// SECURITY: Just return stored metadata - client handles OpenADP recovery
+	// SECURITY: Return current metadata (latest from two-slot system) - client handles OpenADP recovery
 	c.JSON(http.StatusOK, RecoverVaultResponse{
 		Success:         true,
-		OpenADPMetadata: *userModel.OpenADPMetadata,
+		OpenADPMetadata: *currentMetadata,
+	})
+}
+
+// RefreshMetadata implements the OpenADP metadata refresh cycle
+func (h *Handler) RefreshMetadata(c *gin.Context) {
+	log.Printf("🔄 Processing metadata refresh request")
+
+	var req RefreshMetadataRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("❌ Invalid refresh request format: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	log.Printf("📊 Refresh request: metadata length=%d", len(req.UpdatedMetadata))
+
+	// Get user from context
+	user, exists := c.Get("user")
+	if !exists {
+		log.Printf("❌ User not found in context")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	userModel := user.(*database.User)
+	log.Printf("👤 Processing metadata refresh for user: %s", userModel.Email)
+
+	// Validate that user has a vault registered
+	currentMetadata, err := h.db.GetCurrentOpenADPMetadata(userModel.UserID)
+	if err != nil {
+		log.Printf("❌ Failed to check vault status for user %s: %v", userModel.Email, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check vault status"})
+		return
+	}
+
+	if currentMetadata == nil {
+		log.Printf("❌ User %s has no vault registered", userModel.Email)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Vault not registered. Please register vault first."})
+		return
+	}
+
+	// Implement OpenADP two-slot refresh cycle:
+	// 1. Write new metadata to older slot (opposite of current flag)
+	// 2. Flip flag to point to new slot
+	log.Printf("🔄 Updating metadata using two-slot refresh cycle for user: %s", userModel.Email)
+	if err := h.db.UpdateUserOpenADPMetadata(userModel.UserID, req.UpdatedMetadata); err != nil {
+		log.Printf("❌ Failed to refresh metadata for user %s: %v", userModel.Email, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to refresh metadata"})
+		return
+	}
+
+	log.Printf("✅ Successfully refreshed metadata for user: %s", userModel.Email)
+	c.JSON(http.StatusOK, RefreshMetadataResponse{
+		Success: true,
 	})
 }
 
@@ -139,6 +207,14 @@ type AddEntryRequest struct {
 type DeleteEntryRequest struct {
 	Name            string `json:"name" binding:"required"`
 	DeletionPreHash string `json:"deletion_pre_hash" binding:"required"` // base64 encoded
+}
+
+type RefreshMetadataRequest struct {
+	UpdatedMetadata string `json:"updated_metadata" binding:"required"` // base64 encoded
+}
+
+type RefreshMetadataResponse struct {
+	Success bool `json:"success"`
 }
 
 // VaultResponse represents responses from vault operations
@@ -172,8 +248,14 @@ func (h *Handler) AddEntry(c *gin.Context) {
 
 	userObj := user.(*database.User)
 
-	// Validate that user has a vault registered
-	if userObj.OpenADPMetadata == nil {
+	// Validate that user has a vault registered using two-slot system
+	currentMetadata, err := h.db.GetCurrentOpenADPMetadata(userObj.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check vault status"})
+		return
+	}
+
+	if currentMetadata == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Vault not registered. Please register vault first."})
 		return
 	}
@@ -353,10 +435,17 @@ func (h *Handler) GetVaultStatus(c *gin.Context) {
 
 	userObj := user.(*database.User)
 
-	hasVault := userObj.OpenADPMetadata != nil
+	// Get current metadata using two-slot system
+	currentMetadata, err := h.db.GetCurrentOpenADPMetadata(userObj.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get vault status"})
+		return
+	}
+
+	hasVault := currentMetadata != nil
 
 	c.JSON(http.StatusOK, gin.H{
 		"has_vault":        hasVault,
-		"openadp_metadata": userObj.OpenADPMetadata, // Return metadata for client OpenADP operations
+		"openadp_metadata": currentMetadata, // Return current metadata for client OpenADP operations
 	})
 }

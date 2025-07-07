@@ -7,15 +7,17 @@ import (
 )
 
 type User struct {
-	UserID          string    `db:"user_id" json:"user_id"`
-	Email           string    `db:"email" json:"email"`
-	PhoneNumber     *string   `db:"phone_number" json:"phone_number,omitempty"`
-	AuthProvider    string    `db:"auth_provider" json:"auth_provider"`
-	Verified        bool      `db:"verified" json:"verified"`
-	OpenADPMetadata *string   `db:"openadp_metadata" json:"openadp_metadata,omitempty"`
-	VaultPublicKey  *string   `db:"vault_public_key" json:"vault_public_key,omitempty"`
-	CreatedAt       time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt       time.Time `db:"updated_at" json:"updated_at"`
+	UserID                 string    `db:"user_id" json:"user_id"`
+	Email                  string    `db:"email" json:"email"`
+	PhoneNumber            *string   `db:"phone_number" json:"phone_number,omitempty"`
+	AuthProvider           string    `db:"auth_provider" json:"auth_provider"`
+	Verified               bool      `db:"verified" json:"verified"`
+	OpenADPMetadataA       *string   `db:"openadp_metadata_a" json:"openadp_metadata_a,omitempty"`
+	OpenADPMetadataB       *string   `db:"openadp_metadata_b" json:"openadp_metadata_b,omitempty"`
+	OpenADPMetadataCurrent bool      `db:"openadp_metadata_current" json:"openadp_metadata_current"`
+	VaultPublicKey         *string   `db:"vault_public_key" json:"vault_public_key,omitempty"`
+	CreatedAt              time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt              time.Time `db:"updated_at" json:"updated_at"`
 }
 
 type Entry struct {
@@ -30,8 +32,8 @@ type Entry struct {
 // User operations
 func (s *Service) CreateUser(user *User) error {
 	query := `
-		INSERT INTO users (user_id, email, phone_number, auth_provider, verified, openadp_metadata, vault_public_key, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO users (user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, vault_public_key, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		ON CONFLICT (user_id) DO UPDATE SET
 			email = EXCLUDED.email,
 			phone_number = EXCLUDED.phone_number,
@@ -43,13 +45,13 @@ func (s *Service) CreateUser(user *User) error {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 
-	_, err := s.db.Exec(query, user.UserID, user.Email, user.PhoneNumber, user.AuthProvider, user.Verified, user.OpenADPMetadata, user.VaultPublicKey, user.CreatedAt, user.UpdatedAt)
+	_, err := s.db.Exec(query, user.UserID, user.Email, user.PhoneNumber, user.AuthProvider, user.Verified, user.OpenADPMetadataA, user.OpenADPMetadataB, user.OpenADPMetadataCurrent, user.VaultPublicKey, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
 func (s *Service) GetUserByID(userID string) (*User, error) {
 	query := `
-		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata, vault_public_key, created_at, updated_at
+		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, vault_public_key, created_at, updated_at
 		FROM users
 		WHERE user_id = $1
 	`
@@ -61,7 +63,9 @@ func (s *Service) GetUserByID(userID string) (*User, error) {
 		&user.PhoneNumber,
 		&user.AuthProvider,
 		&user.Verified,
-		&user.OpenADPMetadata,
+		&user.OpenADPMetadataA,
+		&user.OpenADPMetadataB,
+		&user.OpenADPMetadataCurrent,
 		&user.VaultPublicKey,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -79,7 +83,7 @@ func (s *Service) GetUserByID(userID string) (*User, error) {
 
 func (s *Service) GetUserByEmail(email string) (*User, error) {
 	query := `
-		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata, vault_public_key, created_at, updated_at
+		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, vault_public_key, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -91,7 +95,9 @@ func (s *Service) GetUserByEmail(email string) (*User, error) {
 		&user.PhoneNumber,
 		&user.AuthProvider,
 		&user.Verified,
-		&user.OpenADPMetadata,
+		&user.OpenADPMetadataA,
+		&user.OpenADPMetadataB,
+		&user.OpenADPMetadataCurrent,
 		&user.VaultPublicKey,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -107,10 +113,57 @@ func (s *Service) GetUserByEmail(email string) (*User, error) {
 	return user, nil
 }
 
+// GetCurrentOpenADPMetadata returns the current metadata based on the flag
+func (s *Service) GetCurrentOpenADPMetadata(userID string) (*string, error) {
+	query := `
+		SELECT 
+			CASE 
+				WHEN openadp_metadata_current THEN openadp_metadata_a
+				ELSE openadp_metadata_b
+			END as current_metadata
+		FROM users
+		WHERE user_id = $1
+	`
+
+	var metadata *string
+	err := s.db.QueryRow(query, userID).Scan(&metadata)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get current metadata: %w", err)
+	}
+
+	return metadata, nil
+}
+
+// UpdateUserOpenADPMetadata implements the two-slot refresh cycle
 func (s *Service) UpdateUserOpenADPMetadata(userID string, metadata string) error {
+	// Step 1: Write to the older slot (opposite of current flag)
+	// Step 2: Flip the flag to point to the new slot
 	query := `
 		UPDATE users
-		SET openadp_metadata = $2, updated_at = $3
+		SET 
+			openadp_metadata_a = CASE WHEN openadp_metadata_current THEN openadp_metadata_a ELSE $2 END,
+			openadp_metadata_b = CASE WHEN openadp_metadata_current THEN $2 ELSE openadp_metadata_b END,
+			openadp_metadata_current = NOT openadp_metadata_current,
+			updated_at = $3
+		WHERE user_id = $1
+	`
+
+	_, err := s.db.Exec(query, userID, metadata, time.Now())
+	return err
+}
+
+// SetInitialOpenADPMetadata sets metadata for new vault registration (slot A, flag=true)
+func (s *Service) SetInitialOpenADPMetadata(userID string, metadata string) error {
+	query := `
+		UPDATE users
+		SET 
+			openadp_metadata_a = $2,
+			openadp_metadata_b = NULL,
+			openadp_metadata_current = TRUE,
+			updated_at = $3
 		WHERE user_id = $1
 	`
 

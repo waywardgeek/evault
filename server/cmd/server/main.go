@@ -146,6 +146,7 @@ func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *
 			// Vault routes (Phase 3)
 			protected.POST("vault/register", handler.RegisterVault)
 			protected.POST("vault/recover", handler.RecoverVault)
+			protected.POST("vault/refresh", handler.RefreshMetadata)
 			protected.GET("vault/status", handler.GetVaultStatus)
 
 			// Entry routes (Phase 3)
@@ -170,6 +171,7 @@ func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *
 						"POST /api/user/refresh":   "Refresh JWT token (requires auth)",
 						"POST /api/vault/register": "Register new vault (requires auth)",
 						"POST /api/vault/recover":  "Recover vault with PIN (requires auth)",
+						"POST /api/vault/refresh":  "Refresh vault metadata (requires auth)",
 						"GET /api/vault/status":    "Get vault status (requires auth)",
 						"POST /api/entries":        "Add entry to vault (requires auth)",
 						"GET /api/entries":         "Get all entries (requires auth)",

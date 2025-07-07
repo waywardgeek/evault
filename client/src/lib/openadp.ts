@@ -90,8 +90,10 @@ export class eVaultOpenADP {
       // Handle automatic backup refresh if provided
       if (result.updatedMetadata) {
         console.log(`📝 OpenADP provided refreshed backup metadata`);
-        // In a real implementation, you'd want to update the stored metadata
-        // For now, we'll just log this
+        console.log(`🔄 Sending refreshed metadata to server for storage...`);
+        
+        // Send updated metadata to server using two-slot refresh cycle
+        await this.sendMetadataRefresh(result.updatedMetadata);
       }
       
       // Derive HPKE keypair from recovered long-term secret
@@ -150,6 +152,55 @@ export class eVaultOpenADP {
   private getAuthToken(): string {
     // In a real app, this would come from NextAuth session
     return '';
+  }
+
+  /**
+   * Send refreshed metadata to server for two-slot storage
+   * CRITICAL: This implements the OpenADP metadata refresh cycle
+   */
+  private async sendMetadataRefresh(updatedMetadata: Uint8Array): Promise<void> {
+    try {
+      console.log(`📡 Sending metadata refresh to server...`);
+      
+      // Convert metadata to base64 for JSON transport
+      const metadataBase64 = btoa(String.fromCharCode.apply(null, Array.from(updatedMetadata)));
+      
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('jwt_token');
+      if (!token) {
+        console.log(`⚠️  No JWT token found - cannot send metadata refresh`);
+        return;
+      }
+      
+      // Send to server's refresh endpoint
+      const response = await fetch('/api/vault/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          updated_metadata: metadataBase64,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Server error: ${error.error || response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log(`✅ Metadata refresh successful - server updated two-slot storage`);
+      } else {
+        console.log(`❌ Metadata refresh failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('❌ Failed to send metadata refresh:', error);
+      // Don't throw - this is not a critical failure for the user
+      // The vault will still work, but the metadata won't be refreshed
+    }
   }
 }
 
