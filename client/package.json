@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "eVault client application",
+  "description": "eVaultApp client application",
   "dependencies": {
     "@hpke/core": "^1.7.2",
     "@hpke/dhkem-x25519": "^1.6.2",

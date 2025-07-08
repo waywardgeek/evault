@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Mock OpenADP Service for eVault Go Server
+// Mock OpenADP Service for eVaultApp Go Server
 // This simulates OpenADP functionality for development and testing
 
 import http from 'http';

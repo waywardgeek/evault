@@ -1,5 +1,5 @@
 /**
- * HPKE (Hybrid Public Key Encryption) implementation for eVault
+ * HPKE (Hybrid Public Key Encryption) implementation for eVaultApp
  * Uses X25519 + AES-256-GCM for strong, standards-compliant encryption
  * 
  * This replaces the simplified AES-GCM approach with proper HPKE:

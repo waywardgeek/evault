@@ -1,6 +1,6 @@
-# eVault - Secure Personal Data Vault
+# eVaultApp - Secure Personal Data Vault
 
-eVault is a secure personal data vault that uses distributed cryptography (OpenADP) to provide nation-state resistant protection for your sensitive information.
+eVaultApp is a secure personal data vault that uses distributed cryptography (OpenADP) to provide nation-state resistant protection for your sensitive information.
 
 ## Features
 

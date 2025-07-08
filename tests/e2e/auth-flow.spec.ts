@@ -5,7 +5,7 @@ test.describe('Authentication Flow', () => {
     await page.goto('/login');
 
     // Check page title
-    await expect(page).toHaveTitle(/eVault.*Secure Personal Data Vault/);
+    await expect(page).toHaveTitle(/eVaultApp.*Secure Personal Data Vault/);
 
     // Check login form elements
     await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();

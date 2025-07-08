@@ -1,4 +1,4 @@
-// OpenADP integration for eVault - REAL IMPLEMENTATION
+// OpenADP integration for eVaultApp - REAL IMPLEMENTATION
 // Using local browser-compatible OpenADP SDK to connect to live distributed servers
 
 import { register, recover, recoverAndReregister } from '@/lib/openadp-browser/index.js';

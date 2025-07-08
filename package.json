@@ -2,7 +2,7 @@
   "name": "evault",
   "version": "1.0.0",
   "private": true,
-  "description": "eVault - Secure Personal Data Vault with OpenADP",
+  "description": "eVaultApp - Secure Personal Data Vault with OpenADP",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
     "server:dev": "cd server && go run cmd/server/main.go",

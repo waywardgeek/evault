@@ -1,4 +1,4 @@
-// Shared API types for eVault
+// Shared API types for eVaultApp
 // These types will be used by both client and server
 
 export interface User {
@@ -22,7 +22,7 @@ export interface Entry {
   updated_at: string;
 }
 
-// API Request/Response types for eVault
+// API Request/Response types for eVaultApp
 
 // Authentication types (Phase 2)
 export interface AuthRequest {

@@ -65,7 +65,7 @@ export default function DashboardPage() {
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          eVault Dashboard
+                      eVaultApp Dashboard
         </h1>
         <p className="text-gray-600">
           Secure personal data vault - Phase 3 Vault Operations

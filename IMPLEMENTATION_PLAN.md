@@ -1,4 +1,4 @@
-# eVault MVP Implementation Plan
+# eVaultApp MVP Implementation Plan
 **Go + GCP Cloud Run + Cloud SQL Architecture**
 
 ## **Project Overview**

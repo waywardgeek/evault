@@ -1,1 +1,1 @@
-# eVault Frontend Deployment Trigger
+# eVaultApp Frontend Deployment Trigger

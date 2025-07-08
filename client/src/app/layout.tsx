@@ -6,7 +6,7 @@ import Providers from './providers'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'eVault - Secure Personal Data Vault',
+  title: 'eVaultApp - Secure Personal Data Vault',
   description: 'A secure personal data vault using OpenADP distributed cryptography',
 }
 
@@ -24,7 +24,7 @@ export default function RootLayout({
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center py-6">
                   <div className="flex items-center">
-                    <h1 className="text-2xl font-bold text-gray-900">eVault</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">eVaultApp</h1>
                   </div>
                   <nav className="flex space-x-8">
                     <a href="/" className="text-gray-500 hover:text-gray-900">Home</a>
