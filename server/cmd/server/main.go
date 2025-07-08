@@ -40,7 +40,7 @@ func main() {
 	authService := auth.NewAuthService(
 		getEnv("GOOGLE_CLIENT_ID", ""),
 		getEnv("GOOGLE_CLIENT_SECRET", ""),
-		getEnv("GOOGLE_REDIRECT_URL", "http://localhost:3000/auth/callback"),
+		"", // No redirect URL needed - NextAuth handles OAuth redirects
 		getEnv("JWT_SECRET", "your-secret-key-change-this-in-production"),
 	)
 
@@ -130,9 +130,10 @@ func setupRouter(handler *handlers.Handler, rateLimiter *handlers.RateLimiter) *
 		// Public authentication routes (Phase 2)
 		auth := api.Group("/auth")
 		{
-			auth.POST("/url", handler.GetAuthURL)          // Get Google OAuth URL
-			auth.POST("/callback", handler.HandleCallback) // Handle OAuth callback
-			auth.GET("/callback", handler.HandleCallback)  // Support GET for browser redirects
+			auth.POST("/url", handler.GetAuthURL)                // Get Google OAuth URL
+			auth.POST("/callback", handler.HandleCallback)       // Handle OAuth callback
+			auth.GET("/callback", handler.HandleCallback)        // Support GET for browser redirects
+			auth.GET("/callback/google", handler.HandleCallback) // Support NextAuth Google callback
 		}
 
 		// Protected routes (require authentication)

@@ -76,17 +76,27 @@ func (h *Handler) GetAuthURL(c *gin.Context) {
 
 // HandleCallback handles Google OAuth callback
 func (h *Handler) HandleCallback(c *gin.Context) {
+	log.Printf("DEBUG: Received %s request to %s", c.Request.Method, c.Request.URL.Path)
+	log.Printf("DEBUG: Query parameters: %v", c.Request.URL.Query())
+	log.Printf("DEBUG: Content-Type: %s", c.GetHeader("Content-Type"))
+
 	var req CallbackRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		// Also support query parameters for direct browser redirects
 		code := c.Query("code")
 		state := c.Query("state")
 		if code == "" || state == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing code or state"})
+			log.Printf("ERROR: Missing required parameters - code: %s, state: %s, error: %v",
+				code != "", state != "", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required authentication data"})
 			return
 		}
 		req.Code = code
 		req.State = state
+		log.Printf("DEBUG: Using query parameters - code length: %d, state length: %d", len(code), len(state))
+	} else {
+		log.Printf("DEBUG: Using JSON body - IDToken: %s, User.Email: %s",
+			req.IDToken != "", req.User.Email)
 	}
 
 	var userInfo *database.User

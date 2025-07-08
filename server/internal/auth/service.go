@@ -48,6 +48,11 @@ type AuthService struct {
 }
 
 func NewAuthService(clientID, clientSecret, redirectURL, jwtSecret string) *AuthService {
+	// If no redirect URL provided, use a placeholder since NextAuth handles redirects
+	if redirectURL == "" {
+		redirectURL = "http://localhost:3000/api/auth/callback/google"
+	}
+
 	return &AuthService{
 		googleConfig: &oauth2.Config{
 			ClientID:     clientID,
