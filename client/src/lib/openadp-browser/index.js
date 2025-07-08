@@ -39,7 +39,7 @@ export function createServer(staticKeyPair, prologue = new Uint8Array()) {
 }
 
 /**
- * @openadp/ocrypt - Nation-state resistant password hashing
+ * @openadp/ocrypt - Device-loss resistant password hashing
  * 
  * This package provides a simple 2-function API for distributed password hashing
  * using OpenADP's Oblivious Pseudo Random Function (OPRF) cryptography.

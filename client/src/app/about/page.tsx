@@ -13,8 +13,8 @@ export default function AboutPage() {
             About eVaultApp
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            A secure personal data vault built on revolutionary distributed cryptography 
-            that's resistant to nation-state surveillance.
+            A secure personal data vault built on distributed trust cryptography 
+            that keeps your data safe even if your phone is stolen.
           </p>
         </div>
       </div>
@@ -27,21 +27,21 @@ export default function AboutPage() {
             <div className="flex">
               <div className="ml-3">
                 <h3 className="text-lg font-medium text-red-800 mb-2">
-                  Secret Surveillance Backdoors Are Real
+                  Your Data Isn't As Safe As You Think
                 </h3>
                 <div className="text-red-700 space-y-2">
-                  <p>• Yahoo was secretly forced to build mass surveillance backdoors</p>
-                  <p>• Apple's Advanced Data Protection is under attack by governments</p>
+                  <p>• Centralized systems can be compromised by hackers or bad actors</p>
+                  <p>• Your phone can be stolen, lost, or broken at any time</p>
                   <p>• Users have no way to know if their "secure" systems have been compromised</p>
                   <p>• Traditional systems have single points of failure</p>
                 </div>
               </div>
             </div>
           </div>
-          <p className="text-lg text-gray-600 text-center">
-            Ever lost access to Gmail, GitHub, or your bank because you couldn't find your recovery codes? 
-            You need somewhere secure to store them, but existing solutions can be backdoored by governments.
-          </p>
+                      <p className="text-lg text-gray-600 text-center">
+              Ever lost access to Gmail, GitHub, or your bank because you couldn't find your recovery codes? 
+              You need somewhere secure to store them, but existing solutions can fail when you need them most.
+            </p>
         </section>
 
         {/* Our Solution */}
@@ -52,8 +52,8 @@ export default function AboutPage() {
               <Shield className="h-12 w-12 text-blue-600 mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Distributed Trust</h3>
               <p className="text-gray-600">
-                Your data is protected across multiple countries. No single government or organization 
-                can access your secrets - they'd need to compromise servers in multiple jurisdictions.
+                Your data is protected across multiple secure servers worldwide. No single point of failure 
+                can compromise your secrets - hackers would need to breach multiple independent systems.
               </p>
             </div>
             <div className="bg-green-50 rounded-2xl p-8">
@@ -116,12 +116,11 @@ export default function AboutPage() {
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Open Source Advanced Data Protection</h3>
                 <p className="text-gray-600 mb-4">
                   OpenADP is an open source project that provides distributed threshold cryptography 
-                  for everyone. Unlike proprietary systems, you can verify the code and know there 
-                  are no hidden backdoors.
+                  for everyone. Unlike proprietary systems, you can verify the code and know exactly 
+                  how your data is protected.
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Nation-State Resistant</span>
-                  <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">100% Open Source</span>
+                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">Protects even when devices are stolen</span>
                   <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">Transparent</span>
                   <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">Distributed Trust</span>
                 </div>
@@ -144,7 +143,7 @@ export default function AboutPage() {
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Join the OpenADP Project</h3>
               <p className="text-gray-600 mb-4">
                 The OpenADP project is recruiting! We need developers, server operators, 
-                and privacy advocates to help build a surveillance-resistant future.
+                and privacy advocates to help build a secure, distributed future.
               </p>
               <a 
                 href="https://github.com/OpenADP/openadp" 
@@ -215,11 +214,11 @@ export default function AboutPage() {
             <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
             <p className="text-xl mb-8 max-w-4xl mx-auto leading-relaxed">
               We believe privacy is a fundamental human right. eVaultApp demonstrates how distributed 
-              cryptography can protect your most sensitive data from surveillance, while maintaining 
+              cryptography can protect your most sensitive data from loss and theft, while maintaining 
               the usability you expect from modern applications.
             </p>
             <p className="text-lg opacity-90">
-              Built with OpenADP • Secured by distributed trust • Protected from nation-state surveillance
+              Built with OpenADP • Secured by distributed trust • Protected from device theft
             </p>
           </div>
         </section>

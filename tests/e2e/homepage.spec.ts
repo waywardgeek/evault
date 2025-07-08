@@ -11,7 +11,7 @@ test.describe('eVault Homepage', () => {
     await expect(page.getByRole('heading', { name: 'Welcome to eVault' })).toBeVisible();
 
     // Check for main sections
-    await expect(page.getByText(/nation-state resistant protection/i)).toBeVisible();
+    await expect(page.getByText(/device-loss resistant protection/i)).toBeVisible();
   });
 
   test('should have working navigation', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('eVault Homepage', () => {
     // Check for features section based on actual content - use headings for specificity
     await expect(page.getByRole('heading', { name: /Secure Storage/i })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Distributed Trust/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: /Nation-State Resistant/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Device-Loss Resistant/i })).toBeVisible();
   });
 
   test('should have responsive design', async ({ page }) => {

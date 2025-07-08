@@ -1,15 +1,15 @@
 /**
- * Ocrypt - Nation-state resistant password hashing using OpenADP distributed cryptography
+ * Ocrypt - Device-loss resistant password hashing using OpenADP distributed cryptography
  * 
  * This module provides a simple 3-function API for distributed password hashing
  * using OpenADP's Oblivious Pseudo Random Function (OPRF) cryptography.
  * 
  * This package replaces traditional password hashing functions like bcrypt, scrypt,
  * Argon2, and PBKDF2 with distributed threshold cryptography that is resistant to
- * nation-state attacks and provides automatic backup refresh.
+ * device-loss attacks and provides automatic backup refresh.
  * 
  * Key Features:
- * - Nation-state resistant security through distributed servers
+ * - Device-loss resistant security through distributed servers
  * - Built-in guess limiting across all servers
  * - Automatic backup refresh with crash safety
  * - Two-phase commit for reliable backup updates

@@ -1,13 +1,13 @@
 # eVaultApp - Secure Personal Data Vault
 
-eVaultApp is a secure personal data vault that uses distributed cryptography (OpenADP) to provide nation-state resistant protection for your sensitive information.
+eVaultApp is a secure personal data vault that uses distributed cryptography (OpenADP) to provide robust protection for your sensitive information even when devices are lost or stolen.
 
 ## Features
 
 - 🔒 **Secure Storage**: Store sensitive data with distributed cryptography protection
 - 🌍 **Distributed Trust**: No single point of failure across multiple countries
 - ⚡ **Frictionless Access**: Add entries without PIN, view with PIN protection
-- 🛡️ **Nation-State Resistant**: OpenADP transforms simple PINs into cryptographically strong keys
+- 🛡️ **Device-Loss Resistant**: OpenADP transforms simple PINs into cryptographically strong keys
 
 ## Architecture
 

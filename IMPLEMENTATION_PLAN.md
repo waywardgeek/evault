@@ -2521,7 +2521,7 @@ make test-pin-recovery       # PIN-based key recovery
 User PIN "3344" → Local key derivation → Easily crackable
 ```
 
-**OpenADP Approach (Nation-State Resistant):**
+**OpenADP Approach (Device-Loss Resistant):**
 ```
 User PIN "3344" → OpenADP distributed network → Cryptographically strong key
 ```
@@ -2563,7 +2563,7 @@ const decryptedEntries = await hpkeDecryptAll(privateKey, encryptedEntries);
 2. **Guess Limiting**: Only 10 PIN attempts before lockout
 3. **Information Theoretic Security**: Even compromised servers learn nothing about PIN
 4. **Frictionless UX**: Public key cached for easy entry addition
-5. **Nation-State Resistance**: No single point of failure
+5. **Device-Loss Resistance**: No single point of failure
 
 ### **Network Architecture**
 
