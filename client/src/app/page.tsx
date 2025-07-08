@@ -12,7 +12,8 @@ export default function Home() {
     if (session) {
       router.push('/vault');
     } else {
-      router.push('/login');
+      // Use NextAuth's callbackUrl parameter to redirect to vault after login
+      router.push('/login?callbackUrl=/vault');
     }
   };
 

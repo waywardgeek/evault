@@ -63,6 +63,22 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // If no specific URL provided, redirect to vault
+      if (url === baseUrl) {
+        return `${baseUrl}/vault`;
+      }
+      // If it's a relative URL, make it absolute
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      // If it's the same domain, allow it
+      if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      // Default to vault
+      return `${baseUrl}/vault`;
+    },
   },
   pages: {
     signIn: '/login',
