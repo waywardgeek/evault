@@ -1,6 +1,21 @@
+'use client';
+
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    if (session) {
+      router.push('/vault');
+    } else {
+      router.push('/login');
+    }
+  };
+
   return (
     <div className="px-4 py-8">
       <div className="text-center">
@@ -41,9 +56,13 @@ export default function Home() {
           
           <div className="space-y-4">
             <div className="flex justify-center space-x-4">
-              <Link href="/login" className="btn-primary">
-                Get Started
-              </Link>
+              <button 
+                onClick={handleGetStarted}
+                disabled={status === 'loading'}
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {status === 'loading' ? 'Loading...' : session ? 'Go to Vault' : 'Get Started'}
+              </button>
               <Link href="/dashboard" className="btn-secondary">
                 Go to Dashboard
               </Link>
