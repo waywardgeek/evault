@@ -26,11 +26,12 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
             {/* Left Side - Text Content */}
             <div className="text-center lg:text-left">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-8">
-                Turn on Advanced Data Protection.
-                <br />
-                <span className="text-blue-600">Your data will be safe.</span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium text-gray-900 leading-relaxed mb-6">
+                Enable Advanced Data Protection.
               </h1>
+              <p className="text-lg sm:text-xl text-gray-600 mb-12 font-light">
+                We'll keep your data private and safe.
+              </p>
               
               <div className="mt-12">
                 <button
