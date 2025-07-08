@@ -6,17 +6,22 @@ import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { openadp, crypto_service } from '@/lib/openadp';
 import { VaultStatusResponse, ListEntriesResponse, GetEntriesResponse } from '@/../../shared/types/api';
+import { useToast } from '@/components/ui/ToastContainer';
+import EntryCard from '@/components/ui/EntryCard';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import { Shield, Plus, Lock, Key, Trash2, UserX } from 'lucide-react';
 
 interface VaultEntry {
   name: string;
   hpkeBlob: string;
   decryptedSecret?: string;
-  isDecrypting?: boolean; // Track decryption state
+  isDecrypting?: boolean;
 }
 
 export default function VaultPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
   
   const [vaultStatus, setVaultStatus] = useState<VaultStatusResponse | null>(null);
   const [entries, setEntries] = useState<VaultEntry[]>([]);
@@ -24,9 +29,11 @@ export default function VaultPage() {
   const [showPinPrompt, setShowPinPrompt] = useState(false);
   const [showRegisterVault, setShowRegisterVault] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [privateKey, setPrivateKey] = useState<Uint8Array | null>(null);
   const [hasPrivateKey, setHasPrivateKey] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -75,6 +82,7 @@ export default function VaultPage() {
       }
     } catch (error) {
       console.error('Failed to load vault data:', error);
+      showError('Failed to load vault', 'Could not load vault data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -82,143 +90,86 @@ export default function VaultPage() {
 
   const handleRegisterVault = async (pin: string) => {
     try {
-      console.log('🚀 Starting vault registration process...');
-      console.log(`📱 PIN length: ${pin.length}`);
-      console.log(`👤 User ID: ${session?.serverUser?.user_id}`);
-      
-      setLoading(true);
+      setActionLoading(true);
       
       // SECURITY: Client handles ALL OpenADP operations directly
-      console.log('🔄 Calling OpenADP registration...');
       const { metadata, privateKey } = await openadp.registerNewVault(session!.serverUser!.user_id, pin);
       
-      console.log('✅ OpenADP registration completed successfully');
-      console.log(`📦 Metadata length: ${metadata.length} characters`);
-      console.log(`📦 Metadata preview: ${metadata.substring(0, 100)}...`);
-      console.log(`🔑 Private key received: ${privateKey.length} bytes`);
-      
-      // Register with server - SECURITY: Only send metadata, no OpenADP calls by server
-      console.log('🌐 Sending registration data to server...');
+      // Register with server
       const registrationPayload = {
-        pin: pin, // Server validates PIN but doesn't call OpenADP
+        pin: pin,
         openadp_metadata: metadata
       };
-      console.log(`📤 Payload: pin=${pin.length} chars, metadata=${metadata.length} chars`);
       
-      const serverResponse = await apiClient.post('/api/vault/register', registrationPayload);
+      await apiClient.post('/api/vault/register', registrationPayload);
       
-      console.log('✅ Server registration completed successfully');
-      console.log(`📥 Server response:`, serverResponse);
-      
-      // SECURITY: Store private key in memory for decryption (Level 2 authentication)
+      // SECURITY: Store private key in memory for decryption
       setPrivateKey(privateKey);
       setHasPrivateKey(true);
-      
-      // SECURITY: Public key is now stored locally during OpenADP registration (Level 1 authentication)
       setIsUnlocked(true);
       
-      // Reload vault data to show the new vault status
-      console.log('🔄 Reloading vault data...');
+      // Reload vault data
       await loadVaultData();
-      
-      // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
-      console.log('✅ Vault registered successfully - private key available for on-demand decryption');
-      
       setShowRegisterVault(false);
       
-      console.log('🎉 Vault registration completed successfully!');
-      alert('Vault registered successfully! You can now add entries and view secrets.');
+      showSuccess('Vault created successfully!', 'Your secure vault is now ready to use.');
     } catch (error) {
       console.error('❌ Vault registration failed:', error);
-      console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        type: typeof error,
-        error: error
-      });
-      alert(`Failed to register vault: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError('Failed to create vault', error instanceof Error ? error.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const handleUnlockVault = async (pin: string) => {
     try {
-      setLoading(true);
+      setActionLoading(true);
       
-      console.log('🔓 Starting vault unlock process...');
-      console.log(`📱 PIN: ${pin}`);
-      
-      // SECURITY: Get metadata from server, but client handles OpenADP recovery
-      console.log('🌐 Requesting metadata from server...');
+      // Get metadata from server
       const recoverResponse = await apiClient.post<{ success: boolean; openadp_metadata: string }>('/api/vault/recover', { pin });
-      
-      console.log('📥 Server response:', recoverResponse);
       
       if (!recoverResponse.openadp_metadata) {
         throw new Error('No vault metadata returned from server');
       }
       
-      console.log(`📦 Metadata received: ${recoverResponse.openadp_metadata.length} characters`);
-      console.log(`📦 Metadata preview: ${recoverResponse.openadp_metadata.substring(0, 100)}...`);
-      
-      // SECURITY: Client handles OpenADP recovery directly - no server OpenADP calls
-      console.log('🔄 Calling OpenADP recovery...');
+      // SECURITY: Client handles OpenADP recovery directly
       const { privateKey, remaining } = await openadp.recoverVaultKey(
         recoverResponse.openadp_metadata,
         pin
       );
       
-      console.log('✅ OpenADP recovery successful');
-      console.log(`🔑 Private key recovered: ${privateKey.length} bytes`);
-      console.log(`⚠️ Remaining attempts: ${remaining}`);
-      
-      // Store private key in memory for decryption (Level 2 authentication)
+      // Store private key in memory for decryption
       setPrivateKey(privateKey);
       setHasPrivateKey(true);
-      
-      // SECURITY: Public key is now stored locally during OpenADP recovery (Level 1 authentication)
       setIsUnlocked(true);
       setShowPinPrompt(false);
       
       // Reload entries after successful unlock
       await loadVaultData();
       
-      // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
-      console.log('✅ Vault unlocked successfully - private key available for on-demand decryption');
-      alert('Vault unlocked successfully!');
+      showSuccess('Vault unlocked successfully!', `${remaining} attempts remaining`);
     } catch (error) {
       console.error('❌ Failed to unlock vault:', error);
-      console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        type: typeof error,
-        error: error
-      });
       
-      // More specific error messages
       if (error instanceof Error) {
         if (error.message.includes('Invalid PIN')) {
-          alert(`Wrong PIN. ${error.message}`);
+          showError('Wrong PIN', error.message);
         } else if (error.message.includes('locked')) {
-          alert('Account locked due to too many failed attempts. Please try again later.');
-        } else if (error.message.includes('metadata')) {
-          alert('Vault metadata issue. You may need to re-register your vault.');
+          showError('Account locked', 'Too many failed attempts. Please try again later.');
         } else {
-          alert(`Failed to unlock vault: ${error.message}`);
+          showError('Failed to unlock vault', error.message);
         }
       } else {
-        alert('Failed to unlock vault. Please check your PIN and try again.');
+        showError('Failed to unlock vault', 'Please check your PIN and try again.');
       }
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
-  // Decrypt individual entry on-demand
   const handleDecryptEntry = async (entryIndex: number) => {
     if (!privateKey) {
-      alert('Please enter your PIN first to decrypt entries.');
+      showWarning('PIN required', 'Please enter your PIN first to decrypt entries.');
       return;
     }
 
@@ -229,8 +180,6 @@ export default function VaultPage() {
       ));
 
       const entry = entries[entryIndex];
-      console.log(`🔓 Decrypting entry: ${entry.name}`);
-      
       const { secret } = await crypto_service.decryptEntry(entry.hpkeBlob, privateKey);
       
       // Update the specific entry with decrypted secret
@@ -239,11 +188,9 @@ export default function VaultPage() {
           ? { ...entry, decryptedSecret: secret, isDecrypting: false }
           : entry
       ));
-
-      console.log(`✅ Successfully decrypted entry: ${entry.name}`);
     } catch (error) {
       console.error('Failed to decrypt entry:', error);
-      alert('Failed to decrypt entry. Please try again.');
+      showError('Failed to decrypt entry', 'Please try again.');
       
       // Clear decrypting state on error
       setEntries(prev => prev.map((entry, index) => 
@@ -254,17 +201,17 @@ export default function VaultPage() {
 
   const handleAddEntry = async (name: string, secret: string) => {
     try {
-      setLoading(true);
+      setActionLoading(true);
       
-      // Check if we have a locally stored public key (new HPKE implementation)
+      // Check if we have a locally stored public key
       const { hasLocalPublicKey } = await import('@/lib/openadp');
       if (!(await hasLocalPublicKey())) {
-        alert('No public key available. Please enter your PIN to unlock vault first.');
+        showWarning('PIN required', 'Please enter your PIN to unlock vault first.');
         setShowPinPrompt(true);
         return;
       }
       
-      // Encrypt entry - SECURITY: Uses locally stored public key
+      // Encrypt entry
       const { hpkeBlob, deletionHash } = await crypto_service.encryptEntry(name, secret);
       
       // Add to server
@@ -274,28 +221,25 @@ export default function VaultPage() {
         deletion_hash: deletionHash
       });
       
-      // Reload entries
+      // Reload entries and close modal
       await loadVaultData();
       setShowAddEntry(false);
       
-      alert('Entry added successfully!');
+      showSuccess('Entry added successfully!', `"${name}" has been securely stored.`);
     } catch (error) {
       console.error('Failed to add entry:', error);
-      alert(`Failed to add entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError('Failed to add entry', error instanceof Error ? error.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
   const handleDeleteEntry = async (name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
-    
     try {
-      setLoading(true);
+      setActionLoading(true);
       
-      // Get private key for decryption
       if (!privateKey) {
-        alert('Private key not available. Please enter your PIN to unlock vault operations.');
+        showWarning('PIN required', 'Please enter your PIN to unlock vault operations.');
         setShowPinPrompt(true);
         return;
       }
@@ -310,7 +254,7 @@ export default function VaultPage() {
       const { getDeletionPreHash } = await import('@/lib/hpke.js');
       const { deletionPreHash } = await getDeletionPreHash(entry.hpkeBlob, privateKey);
       
-      // Send delete request with proper deletion pre-hash
+      // Send delete request
       await apiClient.delete('/api/entries', {
         name,
         deletion_pre_hash: deletionPreHash
@@ -319,69 +263,57 @@ export default function VaultPage() {
       // Reload entries
       await loadVaultData();
       
-      alert('Entry deleted successfully!');
+      showSuccess('Entry deleted successfully!', `"${name}" has been permanently removed.`);
     } catch (error) {
       console.error('Failed to delete entry:', error);
-      alert(`Failed to delete entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError('Failed to delete entry', error instanceof Error ? error.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
+  };
+
+  const handleHideSecret = (index: number) => {
+    setEntries(prev => prev.map((entry, i) => 
+      i === index ? { ...entry, decryptedSecret: undefined } : entry
+    ));
   };
 
   const handleLockVault = async () => {
-    // Clear private key from memory (Level 2 authentication)
-    // PUBLIC KEY STAYS in localStorage for adding entries!
     const { lockVault } = await import('@/lib/openadp');
-    await lockVault(); // Only clears private key from memory
+    await lockVault();
     
     setPrivateKey(null);
     setHasPrivateKey(false);
-    // Note: isUnlocked stays true because public key remains for adding entries
     
-    // Remove decrypted secrets from entries (keep encrypted blobs)
+    // Remove decrypted secrets from entries
     setEntries(entries.map(entry => ({ 
       name: entry.name, 
       hpkeBlob: entry.hpkeBlob,
-      // Remove decryptedSecret and isDecrypting properties
     })));
     
-    console.log('🔒 Vault locked - can still add entries, but need PIN to view/delete');
+    showInfo('Vault locked', 'You can still add entries, but need PIN to view secrets.');
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm('⚠️ WARNING: This will permanently delete your account, vault, and all entries. This cannot be undone. Are you sure?')) {
-      return;
-    }
-    
-    if (!confirm('🗑️ Final confirmation: Delete account and ALL data permanently?')) {
-      return;
-    }
-
     try {
-      setLoading(true);
-      console.log('🗑️ Starting account deletion process...');
+      setActionLoading(true);
 
       // Call server to delete account
       await apiClient.delete('/api/user/delete');
-
-      console.log('✅ Account deleted from server');
 
       // Clear all local storage and cached data
       const { clearAllKeys } = await import('@/lib/openadp');
       await clearAllKeys();
       localStorage.removeItem('jwt_token');
 
-      console.log('✅ Cleared all local data');
-      console.log('🔄 Logging out to clear authentication state...');
-
-      // Force logout to clear OAuth session - this will recreate user on next login
+      // Force logout
       await signOut({ redirect: true, callbackUrl: '/login' });
       
     } catch (error) {
       console.error('❌ Failed to delete account:', error);
-      alert(`Failed to delete account: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError('Failed to delete account', error instanceof Error ? error.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -400,24 +332,27 @@ export default function VaultPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+      {/* Mobile-first header */}
+      <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">eVault</h1>
-              <span className="ml-2 text-sm text-gray-500">Phase 3</span>
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <Shield className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">eVault</h1>
+                <p className="text-xs text-gray-500">Secure Vault</p>
+              </div>
             </div>
-            <nav className="flex space-x-8">
+            <nav className="hidden sm:flex space-x-6">
               <a href="/" className="text-gray-500 hover:text-gray-900">Home</a>
               <a href="/dashboard" className="text-gray-500 hover:text-gray-900">Dashboard</a>
               <span className="text-blue-600 font-medium">Vault</span>
             </nav>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Vault Status */}
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Vault Status</h2>
