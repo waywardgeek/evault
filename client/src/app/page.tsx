@@ -29,8 +29,19 @@ export default function Home() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-medium text-gray-900 leading-relaxed mb-6">
                 Enable Advanced Data Protection.
               </h1>
-              <p className="text-lg sm:text-xl text-gray-600 mb-12 font-light">
+              <p className="text-lg sm:text-xl text-gray-600 mb-4 font-light">
                 We'll keep your data private and safe.
+              </p>
+              
+              <p className="text-sm text-gray-500 mb-12">
+                <a 
+                  href="https://www.tiktok.com/@naomibrockwell/video/7222605522887855361" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-700 underline"
+                >
+                  Learn how
+                </a>
               </p>
               
               <div className="mt-12">
