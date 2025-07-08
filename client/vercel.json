@@ -6,11 +6,6 @@
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "devCommand": "npm run dev",
-  "env": {
-    "NEXTAUTH_URL": "https://evault-app.vercel.app",
-    "NEXTAUTH_SECRET": "your-nextauth-secret-change-this",
-    "NEXT_PUBLIC_API_URL": "https://api.evaultapp.com"
-  },
   "build": {
     "env": {
       "NODE_ENV": "production"
@@ -47,7 +42,7 @@
   "rewrites": [
     {
       "source": "/api/server/(.*)",
-      "destination": "https://api.evaultapp.com/api/$1"
+      "destination": "https://evault-server-768291069844.us-central1.run.app/api/$1"
     }
   ]
 } 
