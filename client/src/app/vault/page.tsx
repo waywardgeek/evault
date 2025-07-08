@@ -409,7 +409,7 @@ export default function VaultPage() {
             </div>
             <nav className="flex space-x-8">
               <a href="/" className="text-gray-500 hover:text-gray-900">Home</a>
-              <a href="/dashboard" className="text-gray-500 hover:text-gray-900">Dashboard</a>
+              <a href="/about" className="text-gray-500 hover:text-gray-900">About</a>
               <span className="text-blue-600 font-medium">Vault</span>
             </nav>
           </div>

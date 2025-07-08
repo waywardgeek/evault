@@ -28,8 +28,8 @@ export default function RootLayout({
                   </div>
                   <nav className="flex space-x-8">
                     <a href="/" className="text-gray-500 hover:text-gray-900">Home</a>
-                    <a href="/dashboard" className="text-gray-500 hover:text-gray-900">Dashboard</a>
-                    <a href="/login" className="text-gray-500 hover:text-gray-900">Login</a>
+                    <a href="/about" className="text-gray-500 hover:text-gray-900">About</a>
+                    <a href="/vault" className="text-gray-500 hover:text-gray-900">Vault</a>
                   </nav>
                 </div>
               </div>

@@ -112,10 +112,10 @@ function LoginContent() {
               <p className="text-sm text-gray-500">
                 For development: 
                 <a
-                  href="/dashboard"
+                  href="/about"
                   className="text-blue-600 hover:text-blue-500 ml-1"
                 >
-                  Continue to Dashboard
+                  Continue to About
                 </a>
               </p>
             </div>
