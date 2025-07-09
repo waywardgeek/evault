@@ -683,17 +683,17 @@ function RegisterVaultModal({ onRegister, onCancel }: {
           </div>
           <div className="flex space-x-4">
             <button
+              onClick={onCancel}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
               onClick={() => onRegister(pin)}
               disabled={pin.length < 4}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               Create Vault
-            </button>
-            <button
-              onClick={onCancel}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
-            >
-              Cancel
             </button>
           </div>
         </div>
@@ -728,17 +728,17 @@ function PinPromptModal({ onUnlock, onCancel }: {
           </div>
           <div className="flex space-x-4">
             <button
+              onClick={onCancel}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
               onClick={() => onUnlock(pin)}
               disabled={!pin}
               className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50"
             >
               Unlock Vault
-            </button>
-            <button
-              onClick={onCancel}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
-            >
-              Cancel
             </button>
           </div>
         </div>
@@ -785,17 +785,17 @@ function AddEntryModal({ onAdd, onCancel }: {
           </div>
           <div className="flex space-x-4">
             <button
+              onClick={onCancel}
+              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+            >
+              Cancel
+            </button>
+            <button
               onClick={() => onAdd(name, secret)}
               disabled={!name || !secret}
               className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               Add Entry
-            </button>
-            <button
-              onClick={onCancel}
-              className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
-            >
-              Cancel
             </button>
           </div>
         </div>
