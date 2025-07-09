@@ -273,3 +273,15 @@ func (s *Service) DeleteUser(userID string) error {
 	_, err := s.db.Exec(query, userID)
 	return err
 }
+
+// UpdateUserEmail updates the user's email address
+func (s *Service) UpdateUserEmail(userID string, email string) error {
+	query := `
+		UPDATE users
+		SET email = $2, updated_at = $3
+		WHERE user_id = $1
+	`
+
+	_, err := s.db.Exec(query, userID, email, time.Now())
+	return err
+}

@@ -348,42 +348,7 @@ export default function VaultPage() {
     console.log('🔒 Vault locked - can still add entries, but need PIN to view/delete');
   };
 
-  const handleDeleteAccount = async () => {
-    if (!confirm('⚠️ WARNING: This will permanently delete your account, vault, and all entries. This cannot be undone. Are you sure?')) {
-      return;
-    }
-    
-    if (!confirm('🗑️ Final confirmation: Delete account and ALL data permanently?')) {
-      return;
-    }
 
-    try {
-      setLoading(true);
-      console.log('🗑️ Starting account deletion process...');
-
-      // Call server to delete account
-      await apiClient.delete('/api/user/delete');
-
-      console.log('✅ Account deleted from server');
-
-      // Clear all local storage and cached data
-      const { clearAllKeys } = await import('@/lib/openadp');
-      await clearAllKeys();
-      localStorage.removeItem('jwt_token');
-
-      console.log('✅ Cleared all local data');
-      console.log('🔄 Logging out to clear authentication state...');
-
-      // Force logout to clear OAuth session - this will recreate user on next login
-      await signOut({ redirect: true, callbackUrl: '/login' });
-      
-    } catch (error) {
-      console.error('❌ Failed to delete account:', error);
-      alert(`Failed to delete account: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (status === 'loading' || loading) {
     return (
@@ -411,6 +376,7 @@ export default function VaultPage() {
               <a href="/" className="text-gray-500 hover:text-gray-900">Home</a>
               <a href="/about" className="text-gray-500 hover:text-gray-900">About</a>
               <span className="text-blue-600 font-medium">Vault</span>
+              <a href="/account" className="text-gray-500 hover:text-gray-900">Account</a>
             </nav>
           </div>
         </div>
@@ -482,14 +448,6 @@ export default function VaultPage() {
                   Lock Vault (Clear Private Key)
                 </button>
               )}
-              
-              {/* Delete Account - Always available for account management */}
-              <button
-                onClick={handleDeleteAccount}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Delete Account
-              </button>
             </div>
           </div>
 

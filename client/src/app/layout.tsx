@@ -30,6 +30,7 @@ export default function RootLayout({
                     <a href="/" className="text-gray-500 hover:text-gray-900">Home</a>
                     <a href="/about" className="text-gray-500 hover:text-gray-900">About</a>
                     <a href="/vault" className="text-gray-500 hover:text-gray-900">Vault</a>
+                    <a href="/account" className="text-gray-500 hover:text-gray-900">Account</a>
                   </nav>
                 </div>
               </div>
