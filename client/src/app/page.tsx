@@ -76,7 +76,7 @@ export default function Home() {
             <div className="flex justify-center lg:justify-end">
               <div className="relative">
                 <img
-                  src="/phone.jpeg"
+                  src="/phone.png"
                   alt="iPhone showing Advanced Data Protection"
                   className="max-w-full h-auto max-h-[600px] object-contain"
                 />
