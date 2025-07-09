@@ -159,24 +159,7 @@ export default function AccountPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">eVaultApp</h1>
-            </div>
-            <nav className="flex space-x-8">
-              <a href="/" className="text-gray-500 hover:text-gray-900">Home</a>
-              <a href="/about" className="text-gray-500 hover:text-gray-900">About</a>
-              <a href="/vault" className="text-gray-500 hover:text-gray-900">Vault</a>
-              <span className="text-blue-600 font-medium">Account</span>
-            </nav>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-8">
           {/* Account Overview */}
           <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -333,7 +316,6 @@ export default function AccountPage() {
             </div>
           </div>
         </div>
-      </main>
     </div>
   );
 } 
