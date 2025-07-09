@@ -164,14 +164,29 @@ export default function VaultPage() {
       
       // SECURITY: Client handles OpenADP recovery directly - no server OpenADP calls
       console.log('🔄 Calling OpenADP recovery...');
-      const { privateKey, remaining } = await openadp.recoverVaultKey(
-        recoverResponse.openadp_metadata,
-        pin
-      );
-      
-      console.log('✅ OpenADP recovery successful');
-      console.log(`🔑 Private key recovered: ${privateKey.length} bytes`);
-      console.log(`⚠️ Remaining attempts: ${remaining}`);
+      let privateKey, remaining;
+      try {
+        const result = await openadp.recoverVaultKey(
+          recoverResponse.openadp_metadata,
+          pin
+        );
+        privateKey = result.privateKey;
+        remaining = result.remaining;
+        
+        console.log('✅ OpenADP recovery successful');
+        console.log(`🔑 Private key recovered: ${privateKey.length} bytes`);
+        console.log(`⚠️ Remaining attempts: ${remaining}`);
+      } catch (openadpError: any) {
+        console.error('❌ OpenADP recovery failed:', openadpError);
+        // Check if it's just a backup refresh failure - we might still have the private key
+        if (openadpError.message && openadpError.message.includes('backup') && openadpError.privateKey) {
+          console.log('⚠️ Backup refresh failed but private key recovered - continuing anyway');
+          privateKey = openadpError.privateKey;
+          remaining = openadpError.remaining || 'unknown';
+        } else {
+          throw openadpError; // Re-throw if it's a real failure
+        }
+      }
       
       // Store private key in memory for decryption (Level 2 authentication)
       setPrivateKey(privateKey);
