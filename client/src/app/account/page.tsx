@@ -37,11 +37,14 @@ export default function AccountPage() {
 
       try {
         const token = (session as any).serverToken;
+        console.log('🔍 Loading account info - Server token available:', !!token);
+        
         if (!token) {
-          throw new Error('No server token available');
+          throw new Error('No server token available. Please sign out and sign in again.');
         }
 
-        const response = await fetch('/api/user/info', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+        const response = await fetch(`${apiUrl}/api/user/info`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -70,7 +73,8 @@ export default function AccountPage() {
     setEmailChanging(true);
     try {
       const token = (session as any).serverToken;
-      const response = await fetch('/api/user/update-email', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/user/update-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +117,14 @@ export default function AccountPage() {
       console.log('🗑️ Starting account deletion process...');
 
       const token = (session as any).serverToken;
-      const response = await fetch('/api/user/delete', {
+      console.log('🔍 Server token available:', !!token);
+      
+      if (!token) {
+        throw new Error('No server token available. Please sign out and sign in again.');
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/api/user/delete`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
