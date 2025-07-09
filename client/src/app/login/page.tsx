@@ -98,27 +98,7 @@ function LoginContent() {
               </button>
             </div>
 
-            <div className="text-center">
-              <div className="space-y-2 text-sm text-gray-500">
-                <p className="font-medium">✅ Phase 2 Authentication Features:</p>
-                <p>• Google OAuth integration</p>
-                <p>• JWT token management</p>
-                <p>• Session handling</p>
-                <p>• Protected API routes</p>
-              </div>
-            </div>
-            
-            <div className="flex justify-center mt-4">
-              <p className="text-sm text-gray-500">
-                For development: 
-                <a
-                  href="/about"
-                  className="text-blue-600 hover:text-blue-500 ml-1"
-                >
-                  Continue to About
-                </a>
-              </p>
-            </div>
+
           </div>
         </div>
       </div>

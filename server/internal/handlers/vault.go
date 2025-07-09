@@ -489,20 +489,15 @@ func (h *Handler) DeleteAccount(c *gin.Context) {
 	userModel := user.(*database.User)
 	log.Printf("👤 Processing account deletion for user: %s", userModel.Email)
 
-	// Delete all entries first (foreign key constraint)
+	// Get entry count for logging
 	entries, err := h.db.GetEntriesByUserID(userModel.UserID)
 	if err != nil {
-		log.Printf("⚠️  Warning: Failed to get entries for deletion: %v", err)
+		log.Printf("⚠️  Warning: Failed to get entry count: %v", err)
 	} else {
-		log.Printf("🗑️  Deleting %d vault entries", len(entries))
-		for _, entry := range entries {
-			if err := h.db.DeleteEntry(userModel.UserID, entry.Name); err != nil {
-				log.Printf("⚠️  Warning: Failed to delete entry %s: %v", entry.Name, err)
-			}
-		}
+		log.Printf("🗑️  Will delete user and %d vault entries (CASCADE)", len(entries))
 	}
 
-	// Delete the user (this will cascade delete related data)
+	// Delete the user (this will cascade delete related data due to foreign key constraint)
 	if err := h.db.DeleteUser(userModel.UserID); err != nil {
 		log.Printf("❌ Failed to delete user %s: %v", userModel.Email, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete account"})
