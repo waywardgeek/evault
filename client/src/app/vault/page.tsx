@@ -184,7 +184,23 @@ export default function VaultPage() {
       // Auto-decrypt the entry that originally triggered the PIN prompt
       if (pendingDecryptIndex !== null) {
         console.log(`🔄 Auto-decrypting pending entry at index ${pendingDecryptIndex}`);
-        handleDecryptEntry(pendingDecryptIndex);
+        // Use the privateKey directly instead of relying on state
+        const entry = entries[pendingDecryptIndex];
+        try {
+          console.log(`🔓 Decrypting entry: ${entry.name}`);
+          const { secret } = await crypto_service.decryptEntry(entry.hpkeBlob, privateKey);
+          
+          // Update the specific entry with decrypted secret
+          setEntries(prev => prev.map((entry, index) => 
+            index === pendingDecryptIndex 
+              ? { ...entry, decryptedSecret: secret, isDecrypting: false }
+              : entry
+          ));
+          
+          console.log(`✅ Successfully auto-decrypted entry: ${entry.name}`);
+        } catch (error) {
+          console.error('Failed to auto-decrypt entry:', error);
+        }
         setPendingDecryptIndex(null);
       }
       
