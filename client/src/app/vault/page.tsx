@@ -364,186 +364,297 @@ export default function VaultPage() {
   if (!session) return null;
 
   return (
-    <div className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-8">
-          {/* Vault Status */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Vault Status</h2>
-            {vaultStatus ? (
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-600">Vault Registered:</span>
-                  <span className={`ml-2 text-sm font-medium ${vaultStatus.has_vault ? 'text-green-600' : 'text-red-600'}`}>
-                    {vaultStatus.has_vault ? '✓ Yes' : '✗ No'}
-                  </span>
+          {/* Beautiful Status Header */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6 mb-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">My Vault</h1>
+              <div className="flex items-center space-x-4">
+                {/* Vault Status Badge */}
+                <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                  vaultStatus?.has_vault 
+                    ? 'bg-green-100 text-green-800 border border-green-200' 
+                    : 'bg-red-100 text-red-800 border border-red-200'
+                }`}>
+                  {vaultStatus?.has_vault ? (
+                    <>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>Active</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Not Set Up</span>
+                    </>
+                  )}
                 </div>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-600">Level 1 - Can Add Entries:</span>
-                  <span className={`ml-2 text-sm font-medium ${isUnlocked ? 'text-green-600' : 'text-red-600'}`}>
-                    {isUnlocked ? '✓ Yes (Public Key Available)' : '✗ No (Need PIN)'}
-                  </span>
+
+                {/* Add Entries Badge */}
+                <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                  isUnlocked 
+                    ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                }`}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>{isUnlocked ? 'Can Add' : 'Need PIN'}</span>
                 </div>
-                <div className="flex items-center">
-                  <span className="text-sm text-gray-600">Level 2 - Can View Secrets:</span>
-                  <span className={`ml-2 text-sm font-medium ${hasPrivateKey ? 'text-green-600' : 'text-orange-600'}`}>
-                    {hasPrivateKey ? '✓ Yes (Private Key in Memory)' : '✗ No (Need PIN)'}
-                  </span>
+
+                {/* View Secrets Badge */}
+                <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                  hasPrivateKey 
+                    ? 'bg-purple-100 text-purple-800 border border-purple-200' 
+                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                }`}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>{hasPrivateKey ? 'Can View' : 'Need PIN'}</span>
                 </div>
               </div>
-            ) : (
-              <p className="text-gray-500">Loading vault status...</p>
-            )}
-            
-            <div className="mt-4 flex space-x-4">
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
               {!vaultStatus?.has_vault && (
                 <button
                   onClick={() => setShowRegisterVault(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  Register New Vault
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                  </svg>
+                  <span>Set Up Vault</span>
                 </button>
               )}
               
               {vaultStatus?.has_vault && !isUnlocked && (
                 <button
                   onClick={() => setShowPinPrompt(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                  className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
-                  Unlock Vault (Enter PIN)
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Unlock Vault</span>
                 </button>
               )}
               
               {vaultStatus?.has_vault && isUnlocked && !hasPrivateKey && (
                 <button
                   onClick={() => setShowPinPrompt(true)}
-                  className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+                  className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  Enter PIN to View Secrets
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Enter PIN to View</span>
                 </button>
               )}
               
               {hasPrivateKey && (
                 <button
                   onClick={handleLockVault}
-                  className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700"
+                  className="flex items-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
                 >
-                  Lock Vault (Clear Private Key)
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Lock Vault</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Entries Section */}
+          {/* Beautiful Entry List */}
           {vaultStatus?.has_vault && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Vault Entries</h2>
-                <button
-                  onClick={() => setShowAddEntry(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                  disabled={!isUnlocked}
-                >
-                  Add Entry {!isUnlocked ? '(PIN Required)' : ''}
-                </button>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 overflow-hidden">
+              {/* Header with Add Button */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-white">
+                    Your Secrets ({entries.length})
+                  </h2>
+                  <button
+                    onClick={() => setShowAddEntry(true)}
+                    disabled={!isUnlocked}
+                    className="flex items-center space-x-2 bg-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                    </svg>
+                    <span>Add Entry</span>
+                  </button>
+                </div>
               </div>
 
-              {entries.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  No entries yet. Add your first recovery codes!
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {entries.map((entry, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{entry.name}</h3>
-                          {entry.decryptedSecret ? (
-                            <div className="mt-2">
-                              <pre className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-2 rounded">
-                                {entry.decryptedSecret}
-                              </pre>
+              {/* Entry List */}
+              <div className="divide-y divide-gray-100">
+                {entries.length === 0 ? (
+                  <div className="text-center py-12">
+                    <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-gray-500 text-lg">No entries yet</p>
+                    <p className="text-gray-400 text-sm mt-1">Add your first recovery codes to get started</p>
+                  </div>
+                ) : (
+                  entries.map((entry, index) => (
+                    <div key={index} className="group hover:bg-gray-50/50 transition-colors">
+                      <div className="px-6 py-4">
+                        {/* Entry Header */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3 flex-1 min-w-0">
+                            <div className="flex-shrink-0">
+                              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-gray-900 truncate">{entry.name}</h3>
+                              <p className="text-sm text-gray-500">
+                                {entry.decryptedSecret ? 'Decrypted' : 'Encrypted'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            {/* View/Hide Secret Button */}
+                            {entry.decryptedSecret ? (
                               <button
                                 onClick={() => {
-                                  // Hide the decrypted secret
                                   setEntries(prev => prev.map((e, i) => 
                                     i === index ? { ...e, decryptedSecret: undefined } : e
                                   ));
                                 }}
-                                className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Hide secret"
                               >
-                                🙈 Hide Secret
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                                  <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                                </svg>
                               </button>
-                            </div>
-                          ) : (
-                            <div className="mt-2 flex items-center space-x-2">
-                              <span className="text-sm text-gray-500">🔒 Encrypted</span>
-                              {hasPrivateKey && (
-                                <button
-                                  onClick={() => handleDecryptEntry(index)}
-                                  disabled={entry.isDecrypting}
-                                  className="text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50 flex items-center space-x-1"
-                                >
-                                  {entry.isDecrypting ? (
-                                    <>
-                                      <span className="animate-spin">⏳</span>
-                                      <span>Decrypting...</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span>👁️</span>
-                                      <span>View Secret</span>
-                                    </>
-                                  )}
-                                </button>
-                              )}
-                              {!hasPrivateKey && (
-                                <button
-                                  onClick={() => setShowPinPrompt(true)}
-                                  className="text-sm text-orange-600 hover:text-orange-800 underline"
-                                >
-                                  Enter PIN to view
-                                </button>
-                              )}
-                            </div>
-                          )}
+                            ) : (
+                              <button
+                                onClick={() => hasPrivateKey ? handleDecryptEntry(index) : setShowPinPrompt(true)}
+                                disabled={entry.isDecrypting}
+                                className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                                title={hasPrivateKey ? "View secret" : "Enter PIN to view"}
+                              >
+                                {entry.isDecrypting ? (
+                                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
+
+                            {/* Copy Button - only show when decrypted */}
+                            {entry.decryptedSecret && (
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(entry.decryptedSecret || '');
+                                  // You could add a toast notification here
+                                }}
+                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                title="Copy to clipboard"
+                              >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" />
+                                  <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2V5a2 2 0 00-2-2v8z" />
+                                </svg>
+                              </button>
+                            )}
+
+                            {/* Delete Button - only show when PIN available */}
+                            {hasPrivateKey && (
+                              <button
+                                onClick={() => handleDeleteEntry(entry.name)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                title="Delete entry"
+                              >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <button
-                          onClick={() => handleDeleteEntry(entry.name)}
-                          className="ml-4 text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Delete
-                        </button>
+
+                        {/* Smart Secret Display */}
+                        {entry.decryptedSecret && (
+                          <div className="mt-4 animate-fadeIn">
+                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                              {entry.decryptedSecret.length > 100 || entry.decryptedSecret.includes('\n') ? (
+                                // Long/multi-line secrets get expandable display
+                                <div>
+                                  <div className="text-sm text-gray-600 mb-2">Secret content:</div>
+                                  <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono bg-white p-3 rounded border max-h-32 overflow-y-auto">
+                                    {entry.decryptedSecret}
+                                  </pre>
+                                </div>
+                              ) : (
+                                // Short secrets get inline display
+                                <div className="flex items-center justify-between">
+                                  <code className="text-sm text-gray-800 bg-white px-2 py-1 rounded border">
+                                    {entry.decryptedSecret}
+                                  </code>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  ))
+                )}
+              </div>
             </div>
           )}
         </div>
 
         {/* Modals */}
-      {showRegisterVault && (
-        <RegisterVaultModal
-          onRegister={handleRegisterVault}
-          onCancel={() => setShowRegisterVault(false)}
-        />
-      )}
+        {showRegisterVault && (
+          <RegisterVaultModal
+            onRegister={handleRegisterVault}
+            onCancel={() => setShowRegisterVault(false)}
+          />
+        )}
 
-      {showPinPrompt && (
-        <PinPromptModal
-          onUnlock={handleUnlockVault}
-          onCancel={() => setShowPinPrompt(false)}
-        />
-      )}
+        {showPinPrompt && (
+          <PinPromptModal
+            onUnlock={handleUnlockVault}
+            onCancel={() => setShowPinPrompt(false)}
+          />
+        )}
 
-      {showAddEntry && (
-        <AddEntryModal
-          onAdd={handleAddEntry}
-          onCancel={() => setShowAddEntry(false)}
-        />
-      )}
+        {showAddEntry && (
+          <AddEntryModal
+            onAdd={handleAddEntry}
+            onCancel={() => setShowAddEntry(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }
