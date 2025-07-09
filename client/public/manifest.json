@@ -1,5 +1,5 @@
 {
-  "name": "eVaultApp - Secure Personal Data Vault",
+  "name": "eVaultApp",
   "short_name": "eVaultApp",
   "description": "A secure personal data vault using OpenADP distributed cryptography",
   "start_url": "/",
