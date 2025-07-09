@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { User, Mail, Trash2, Shield, Key } from 'lucide-react'
+import { User, Mail, Trash2, Shield, Key, LogOut } from 'lucide-react'
 
 interface AccountInfo {
   email: string;
@@ -143,6 +143,10 @@ export default function AccountPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/login' });
   };
 
   if (status === 'loading' || loading) {
@@ -293,6 +297,32 @@ export default function AccountPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Sign Out Section */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="flex items-center mb-4">
+              <LogOut className="h-6 w-6 text-orange-600 mr-2" />
+              <h2 className="text-xl font-semibold">Session Management</h2>
+            </div>
+
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-orange-800 mb-2">Sign Out</h3>
+                  <p className="text-sm text-orange-700">
+                    Sign out of your account and return to the login page. Your data will remain secure.
+                  </p>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 flex items-center space-x-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Danger Zone */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
@@ -45,10 +45,6 @@ export default function DashboardPage() {
       loadData()
     }
   }, [session, status])
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/login' })
-  }
 
   if (status === 'loading' || isLoading) {
     return (
@@ -108,14 +104,6 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium">
                   {session.serverToken ? '✅ Available' : '❌ Not Set'}
                 </span>
-              </div>
-              <div className="mt-4">
-                <button
-                  onClick={handleSignOut}
-                  className="w-full btn-secondary"
-                >
-                  Sign Out
-                </button>
               </div>
             </div>
           ) : (
