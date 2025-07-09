@@ -30,7 +30,7 @@ export default function Home() {
                 Enable Advanced Data Protection.
               </h1>
               <p className="text-lg sm:text-xl text-gray-600 mb-4 font-light">
-                We'll keep your data private and safe.
+                We'll keep your recovery codes safe.
               </p>
               
               <p className="text-sm text-gray-500 mb-12">
