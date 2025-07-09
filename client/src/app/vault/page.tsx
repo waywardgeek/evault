@@ -27,6 +27,7 @@ export default function VaultPage() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [privateKey, setPrivateKey] = useState<Uint8Array | null>(null);
   const [hasPrivateKey, setHasPrivateKey] = useState(false);
+  const [pendingDecryptIndex, setPendingDecryptIndex] = useState<number | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -183,6 +184,16 @@ export default function VaultPage() {
       // Reload entries after successful unlock
       await loadVaultData();
       
+      // Auto-decrypt the entry that originally triggered the PIN prompt
+      if (pendingDecryptIndex !== null) {
+        console.log(`🔄 Auto-decrypting pending entry at index ${pendingDecryptIndex}`);
+        // Use setTimeout to ensure the state updates have propagated
+        setTimeout(() => {
+          handleDecryptEntry(pendingDecryptIndex);
+          setPendingDecryptIndex(null);
+        }, 100);
+      }
+      
       // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
       console.log('✅ Vault unlocked successfully - private key available for on-demand decryption');
     } catch (error) {
@@ -216,7 +227,9 @@ export default function VaultPage() {
   // Decrypt individual entry on-demand
   const handleDecryptEntry = async (entryIndex: number) => {
     if (!privateKey) {
-      alert('Please enter your PIN first to decrypt entries.');
+      // Remember which entry the user wants to decrypt
+      setPendingDecryptIndex(entryIndex);
+      setShowPinPrompt(true);
       return;
     }
 
@@ -543,7 +556,7 @@ export default function VaultPage() {
                               </button>
                             ) : (
                               <button
-                                onClick={() => hasPrivateKey ? handleDecryptEntry(index) : setShowPinPrompt(true)}
+                                onClick={() => handleDecryptEntry(index)}
                                 disabled={entry.isDecrypting}
                                 className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
                                 title={hasPrivateKey ? "View secret" : "Enter PIN to view"}
@@ -638,7 +651,10 @@ export default function VaultPage() {
         {showPinPrompt && (
           <PinPromptModal
             onUnlock={handleUnlockVault}
-            onCancel={() => setShowPinPrompt(false)}
+            onCancel={() => {
+              setShowPinPrompt(false);
+              setPendingDecryptIndex(null);
+            }}
           />
         )}
 
