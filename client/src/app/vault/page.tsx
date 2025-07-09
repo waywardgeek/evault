@@ -181,17 +181,11 @@ export default function VaultPage() {
       setIsUnlocked(true);
       setShowPinPrompt(false);
       
-      // Reload entries after successful unlock
-      await loadVaultData();
-      
       // Auto-decrypt the entry that originally triggered the PIN prompt
       if (pendingDecryptIndex !== null) {
         console.log(`🔄 Auto-decrypting pending entry at index ${pendingDecryptIndex}`);
-        // Use setTimeout to ensure the state updates have propagated
-        setTimeout(() => {
-          handleDecryptEntry(pendingDecryptIndex);
-          setPendingDecryptIndex(null);
-        }, 100);
+        handleDecryptEntry(pendingDecryptIndex);
+        setPendingDecryptIndex(null);
       }
       
       // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
