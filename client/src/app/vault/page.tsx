@@ -708,6 +708,10 @@ function RegisterVaultModal({ onRegister, onCancel }: {
               placeholder="Enter your PIN"
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               minLength={4}
+              autoComplete="new-password"
+              data-form-type="other"
+              data-lpignore="true"
+              role="presentation"
             />
           </div>
           <div className="flex space-x-4">
@@ -753,6 +757,10 @@ function PinPromptModal({ onUnlock, onCancel }: {
               placeholder="Enter your PIN"
               className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               onKeyPress={(e) => e.key === 'Enter' && pin && onUnlock(pin)}
+              autoComplete="new-password"
+              data-form-type="other"
+              data-lpignore="true"
+              role="presentation"
             />
           </div>
           <div className="flex space-x-4">
