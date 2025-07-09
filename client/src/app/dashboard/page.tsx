@@ -61,10 +61,10 @@ export default function DashboardPage() {
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      eVaultApp Dashboard
+          eVaultApp Dashboard
         </h1>
         <p className="text-gray-600">
-          Secure personal data vault - Phase 3 Vault Operations
+          System status and debugging information
         </p>
       </div>
 
@@ -151,87 +151,25 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Development Features */}
+      {/* Quick Access */}
       <div className="card">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
-          🚀 Phase 2 Features
+          🚀 Quick Access
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="feature-item">
-            <h4 className="font-medium text-gray-900 mb-2">✅ Google OAuth</h4>
-            <p className="text-sm text-gray-600">
-              Secure authentication with Google OAuth 2.0 integration
-            </p>
-          </div>
-          <div className="feature-item">
-            <h4 className="font-medium text-gray-900 mb-2">✅ JWT Tokens</h4>
-            <p className="text-sm text-gray-600">
-              Server-side JWT token generation and validation
-            </p>
-          </div>
-          <div className="feature-item">
-            <h4 className="font-medium text-gray-900 mb-2">✅ Session Management</h4>
-            <p className="text-sm text-gray-600">
-              NextAuth.js session handling with token persistence
-            </p>
-          </div>
-          <div className="feature-item">
-            <h4 className="font-medium text-gray-900 mb-2">✅ Protected API Routes</h4>
-            <p className="text-sm text-gray-600">
-              Authentication middleware protecting sensitive endpoints
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Phase 3 Features */}
-      <div className="card mt-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">
-          🔐 Phase 3: Vault Operations (Ready!)
-        </h3>
-        <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-blue-900">Access Your Vault</h4>
-                <p className="text-sm text-blue-700 mt-1">
-                  Secure storage for recovery codes with OpenADP protection
-                </p>
-              </div>
-              <a
-                href="/vault"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Open Vault
-              </a>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="feature-item">
-              <h4 className="font-medium text-gray-900 mb-2">✅ OpenADP Integration</h4>
-              <p className="text-sm text-gray-600">
-                PIN-protected vaults using distributed cryptography
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-medium text-blue-900">Your Vault</h4>
+              <p className="text-sm text-blue-700 mt-1">
+                Access your secure vault with encrypted storage
               </p>
             </div>
-            <div className="feature-item">
-              <h4 className="font-medium text-gray-900 mb-2">✅ HPKE Encryption</h4>
-              <p className="text-sm text-gray-600">
-                Hybrid Public Key Encryption for secure data storage
-              </p>
-            </div>
-            <div className="feature-item">
-              <h4 className="font-medium text-gray-900 mb-2">✅ Frictionless Adding</h4>
-              <p className="text-sm text-gray-600">
-                Add entries without PIN after vault unlock
-              </p>
-            </div>
-            <div className="feature-item">
-              <h4 className="font-medium text-gray-900 mb-2">✅ Vault Management</h4>
-              <p className="text-sm text-gray-600">
-                Complete CRUD operations for vault entries
-              </p>
-            </div>
+            <a
+              href="/vault"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              Open Vault
+            </a>
           </div>
         </div>
       </div>
