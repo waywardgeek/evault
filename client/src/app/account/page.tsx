@@ -278,43 +278,38 @@ export default function AccountPage() {
             </div>
           </div>
 
-          {/* Vault Management */}
+          {/* Vault Status */}
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <div className="flex items-center mb-4">
               <Key className="h-6 w-6 text-purple-600 mr-2" />
-              <h2 className="text-xl font-semibold">Vault Management</h2>
+              <h2 className="text-xl font-semibold">Vault Status</h2>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-medium text-gray-900">Access Your Vault</h3>
-                  <p className="text-sm text-gray-600">
-                    View and manage your stored recovery codes and secrets
-                  </p>
-                </div>
-                <a
-                  href="/vault"
-                  className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
-                >
-                  Go to Vault
-                </a>
-              </div>
-
-              {accountInfo?.has_vault && (
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-green-600 mr-2" />
-                    <div>
-                      <p className="text-sm text-green-800 font-medium">Vault Active</p>
-                      <p className="text-sm text-green-600">
-                        Your vault is set up and protecting {accountInfo.total_entries} entries
-                      </p>
-                    </div>
+            {accountInfo?.has_vault ? (
+              <div className="p-4 bg-green-50 rounded-lg">
+                <div className="flex items-center">
+                  <Shield className="h-5 w-5 text-green-600 mr-2" />
+                  <div>
+                    <p className="text-sm text-green-800 font-medium">Vault Active</p>
+                    <p className="text-sm text-green-600">
+                      Your vault is set up and protecting {accountInfo.total_entries} entries
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <div className="flex items-center">
+                  <Shield className="h-5 w-5 text-orange-600 mr-2" />
+                  <div>
+                    <p className="text-sm text-orange-800 font-medium">Vault Not Set Up</p>
+                    <p className="text-sm text-orange-600">
+                      Use the Vault page to set up your secure storage
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Danger Zone */}
