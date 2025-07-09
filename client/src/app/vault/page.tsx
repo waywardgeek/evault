@@ -127,7 +127,6 @@ export default function VaultPage() {
       setShowRegisterVault(false);
       
       console.log('🎉 Vault registration completed successfully!');
-      alert('Vault registered successfully! You can now add entries and view secrets.');
     } catch (error) {
       console.error('❌ Vault registration failed:', error);
       console.error('❌ Error details:', {
@@ -186,7 +185,6 @@ export default function VaultPage() {
       
       // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
       console.log('✅ Vault unlocked successfully - private key available for on-demand decryption');
-      alert('Vault unlocked successfully!');
     } catch (error) {
       console.error('❌ Failed to unlock vault:', error);
       console.error('❌ Error details:', {
@@ -277,8 +275,6 @@ export default function VaultPage() {
       // Reload entries
       await loadVaultData();
       setShowAddEntry(false);
-      
-      alert('Entry added successfully!');
     } catch (error) {
       console.error('Failed to add entry:', error);
       alert(`Failed to add entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -318,8 +314,6 @@ export default function VaultPage() {
       
       // Reload entries
       await loadVaultData();
-      
-      alert('Entry deleted successfully!');
     } catch (error) {
       console.error('Failed to delete entry:', error);
       alert(`Failed to delete entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
