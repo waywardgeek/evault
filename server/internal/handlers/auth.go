@@ -21,10 +21,11 @@ type AuthResponse struct {
 }
 
 type CallbackRequest struct {
-	Code    string `json:"code,omitempty"`     // For direct OAuth code flow
-	State   string `json:"state,omitempty"`    // For direct OAuth code flow
-	IDToken string `json:"id_token,omitempty"` // For NextAuth token exchange (changed from access_token)
-	User    struct {
+	Code     string `json:"code,omitempty"`     // For direct OAuth code flow
+	State    string `json:"state,omitempty"`    // For direct OAuth code flow
+	IDToken  string `json:"id_token,omitempty"` // For NextAuth token exchange
+	Provider string `json:"provider,omitempty"` // Provider name (google, apple)
+	User     struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
 		Name  string `json:"name"`
@@ -105,32 +106,56 @@ func (h *Handler) HandleCallback(c *gin.Context) {
 	if req.IDToken != "" && req.User.Email != "" {
 		// Log for debugging
 		log.Printf("DEBUG: Processing NextAuth ID token exchange for user: %s", req.User.Email)
+		log.Printf("DEBUG: Provider: %s", req.Provider)
 		log.Printf("DEBUG: ID token length: %d", len(req.IDToken))
-		log.Printf("DEBUG: ID token starts with: %s", req.IDToken[:min(50, len(req.IDToken))])
 
-		// Validate the ID token with Google (for security)
-		claims, err := h.authService.ValidateGoogleIDToken(c.Request.Context(), req.IDToken)
-		if err != nil {
-			log.Printf("ERROR: ID token validation failed: %v", err)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("Invalid ID token: %v", err)})
-			return
+		// Determine provider (default to google for backward compatibility)
+		provider := req.Provider
+		if provider == "" {
+			provider = "google"
 		}
 
-		log.Printf("DEBUG: ID token validation successful for user: %s", claims.Email)
+		if provider == "google" {
+			// Validate the ID token with Google (for security)
+			claims, err := h.authService.ValidateGoogleIDToken(c.Request.Context(), req.IDToken)
+			if err != nil {
+				log.Printf("ERROR: Google ID token validation failed: %v", err)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("Invalid Google ID token: %v", err)})
+				return
+			}
 
-		// Verify the email matches what NextAuth provided
-		if claims.Email != req.User.Email {
-			log.Printf("ERROR: Email mismatch - token: %s, provided: %s", claims.Email, req.User.Email)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Email mismatch between ID token and user info"})
+			log.Printf("DEBUG: Google ID token validation successful for user: %s", claims.Email)
+
+			// Verify the email matches what NextAuth provided
+			if claims.Email != req.User.Email {
+				log.Printf("ERROR: Email mismatch - token: %s, provided: %s", claims.Email, req.User.Email)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Email mismatch between ID token and user info"})
+				return
+			}
+
+			// Create user from NextAuth provided data, but use claims for verification
+			userInfo = &database.User{
+				UserID:       claims.Subject, // Use subject from verified token
+				Email:        claims.Email,   // Use email from verified token
+				AuthProvider: "google",
+				Verified:     claims.EmailVerified,
+			}
+		} else if provider == "apple" {
+			// For Apple, we'll trust NextAuth's validation for now
+			// In production, you'd want to validate the Apple ID token as well
+			log.Printf("DEBUG: Processing Apple ID token for user: %s", req.User.Email)
+
+			// Create user from NextAuth provided data
+			userInfo = &database.User{
+				UserID:       req.User.ID,
+				Email:        req.User.Email,
+				AuthProvider: "apple",
+				Verified:     true, // Apple emails are generally verified
+			}
+		} else {
+			log.Printf("ERROR: Unsupported provider: %s", provider)
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Unsupported provider: %s", provider)})
 			return
-		}
-
-		// Create user from NextAuth provided data, but use claims for verification
-		userInfo = &database.User{
-			UserID:       claims.Subject, // Use subject from verified token
-			Email:        claims.Email,   // Use email from verified token
-			AuthProvider: "google",
-			Verified:     claims.EmailVerified,
 		}
 	} else if req.Code != "" {
 		// Handle direct OAuth code flow

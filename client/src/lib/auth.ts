@@ -1,19 +1,25 @@
 import NextAuth, { AuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
+import AppleProvider from 'next-auth/providers/apple'
 
 export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
+    AppleProvider({
+      clientId: process.env.APPLE_ID || '',
+      clientSecret: process.env.APPLE_SECRET || '',
     })
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Send the OAuth code to our backend server
-      if (account?.provider === 'google' && account.id_token) {
+      // Send the OAuth token to our backend server
+      if ((account?.provider === 'google' && account.id_token) || 
+          (account?.provider === 'apple' && account.id_token)) {
         try {
-          // Exchange Google ID token for our server JWT by calling the real Go server
+          // Exchange provider token for our server JWT by calling the real Go server
           const serverURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
           const response = await fetch(`${serverURL}/api/auth/callback`, {
             method: 'POST',
@@ -22,6 +28,7 @@ export const authOptions: AuthOptions = {
             },
             body: JSON.stringify({
               id_token: account.id_token,
+              provider: account.provider,
               user: {
                 id: user.id,
                 email: user.email,
