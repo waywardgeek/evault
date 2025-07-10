@@ -245,13 +245,6 @@ export default function AccountPage() {
                 </div>
                 <div className="flex space-x-4">
                   <button
-                    type="submit"
-                    disabled={emailChanging}
-                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
-                  >
-                    {emailChanging ? 'Updating...' : 'Update Email'}
-                  </button>
-                  <button
                     type="button"
                     onClick={() => {
                       setShowChangeEmail(false);
@@ -260,6 +253,13 @@ export default function AccountPage() {
                     className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={emailChanging}
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {emailChanging ? 'Updating...' : 'Update Email'}
                   </button>
                 </div>
               </form>
