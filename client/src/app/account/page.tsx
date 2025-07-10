@@ -83,13 +83,15 @@ export default function AccountPage() {
         body: JSON.stringify({ email: newEmail.trim() })
       });
 
+      // Parse JSON response for both success and error cases
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update email');
+        throw new Error(data.error || 'Failed to update email');
       }
 
-      // Update local state
-      setAccountInfo(prev => prev ? { ...prev, email: newEmail.trim() } : null);
+      // Update local state with the new email from server response
+      setAccountInfo(prev => prev ? { ...prev, email: data.email || newEmail.trim() } : null);
       setShowChangeEmail(false);
       setNewEmail('');
       alert('Email updated successfully!');
