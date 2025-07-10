@@ -241,6 +241,22 @@ export default function AccountPage() {
               </button>
             </div>
 
+            {/* Current Email Display */}
+            {accountInfo && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500 mb-1">Current Email Address</h3>
+                    <p className="text-lg text-gray-900 font-medium">{accountInfo.email}</p>
+                  </div>
+                  <div className="flex items-center text-green-600">
+                    <Shield className="h-5 w-5 mr-1" />
+                    <span className="text-sm font-medium">Verified</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showChangeEmail && (
               <form onSubmit={handleChangeEmail} className="bg-gray-50 p-4 rounded-lg">
                 <div className="mb-4">
