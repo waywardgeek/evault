@@ -6,11 +6,20 @@ import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api-client'
 import type { UserResponse } from '../../../../shared/types/api'
 
+interface UserStats {
+  total_users: number
+  recent_signups_7d: number
+  recent_signups_30d: number
+  users_with_vaults: number
+  total_entries: number
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [serverUser, setServerUser] = useState<UserResponse | null>(null)
   const [apiStatus, setApiStatus] = useState<any>(null)
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,6 +32,18 @@ export default function DashboardPage() {
         // Get API status
         const status = await apiClient.getStatus()
         setApiStatus(status)
+
+        // Get user statistics
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+          const response = await fetch(`${apiUrl}/api/stats`)
+          if (response.ok) {
+            const stats = await response.json()
+            setUserStats(stats)
+          }
+        } catch (err) {
+          console.log('Failed to fetch user stats:', err)
+        }
 
         // If we have a session, try to get server user data
         if (session?.serverToken) {
@@ -149,6 +170,77 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* User Statistics */}
+      <div className="card mb-8">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          📊 User Statistics
+        </h3>
+        {userStats ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-600 font-medium">Total Users</p>
+                  <p className="text-2xl font-bold text-blue-900">{userStats.total_users}</p>
+                </div>
+                <div className="text-blue-600">👥</div>
+              </div>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-600 font-medium">New This Week</p>
+                  <p className="text-2xl font-bold text-green-900">{userStats.recent_signups_7d}</p>
+                </div>
+                <div className="text-green-600">🆕</div>
+              </div>
+            </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-purple-600 font-medium">With Vaults</p>
+                  <p className="text-2xl font-bold text-purple-900">{userStats.users_with_vaults}</p>
+                </div>
+                <div className="text-purple-600">🔐</div>
+              </div>
+            </div>
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-orange-600 font-medium">New This Month</p>
+                  <p className="text-2xl font-bold text-orange-900">{userStats.recent_signups_30d}</p>
+                </div>
+                <div className="text-orange-600">📅</div>
+              </div>
+            </div>
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-indigo-600 font-medium">Total Entries</p>
+                  <p className="text-2xl font-bold text-indigo-900">{userStats.total_entries}</p>
+                </div>
+                <div className="text-indigo-600">📝</div>
+              </div>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 font-medium">Vault Adoption</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {userStats.total_users > 0 ? Math.round((userStats.users_with_vaults / userStats.total_users) * 100) : 0}%
+                  </p>
+                </div>
+                <div className="text-gray-600">📈</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <p className="text-gray-500">Loading user statistics...</p>
+          </div>
+        )}
       </div>
 
       {/* Quick Access */}

@@ -332,3 +332,24 @@ func (h *Handler) UpdateUserEmail(c *gin.Context) {
 		"email":   req.Email,
 	})
 }
+
+// UserStats represents user statistics
+type UserStats struct {
+	TotalUsers       int `json:"total_users"`
+	RecentSignups7d  int `json:"recent_signups_7d"`
+	RecentSignups30d int `json:"recent_signups_30d"`
+	UsersWithVaults  int `json:"users_with_vaults"`
+	TotalEntries     int `json:"total_entries"`
+}
+
+// GetUserStats returns user statistics - for admin/debugging purposes
+func (h *Handler) GetUserStats(c *gin.Context) {
+	// This is a simple admin endpoint - in production you'd add proper admin auth
+	stats, err := h.db.GetUserStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user stats"})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}

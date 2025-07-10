@@ -285,3 +285,49 @@ func (s *Service) UpdateUserEmail(userID string, email string) error {
 	_, err := s.db.Exec(query, userID, email, time.Now())
 	return err
 }
+
+// UserStats represents user statistics
+type UserStats struct {
+	TotalUsers       int `json:"total_users"`
+	RecentSignups7d  int `json:"recent_signups_7d"`
+	RecentSignups30d int `json:"recent_signups_30d"`
+	UsersWithVaults  int `json:"users_with_vaults"`
+	TotalEntries     int `json:"total_entries"`
+}
+
+// GetUserStats returns user statistics
+func (s *Service) GetUserStats() (*UserStats, error) {
+	var stats UserStats
+
+	// Get total users
+	err := s.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&stats.TotalUsers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total users: %w", err)
+	}
+
+	// Get recent signups (7 days)
+	err = s.db.QueryRow("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'").Scan(&stats.RecentSignups7d)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent signups 7d: %w", err)
+	}
+
+	// Get recent signups (30 days)
+	err = s.db.QueryRow("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'").Scan(&stats.RecentSignups30d)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recent signups 30d: %w", err)
+	}
+
+	// Get users with vaults (users who have openadp metadata)
+	err = s.db.QueryRow("SELECT COUNT(*) FROM users WHERE openadp_metadata_a IS NOT NULL OR openadp_metadata_b IS NOT NULL").Scan(&stats.UsersWithVaults)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users with vaults: %w", err)
+	}
+
+	// Get total entries
+	err = s.db.QueryRow("SELECT COUNT(*) FROM entries").Scan(&stats.TotalEntries)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get total entries: %w", err)
+	}
+
+	return &stats, nil
+}
