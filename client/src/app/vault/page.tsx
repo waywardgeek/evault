@@ -400,8 +400,7 @@ export default function VaultPage() {
         <div className="px-4 py-8">
           {/* Beautiful Status Header */}
           <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">My Vault</h1>
+            <div className="flex items-center justify-end mb-6">
               <div className="flex items-center space-x-4">
                 {/* Vault Status Badge */}
                 <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium ${
