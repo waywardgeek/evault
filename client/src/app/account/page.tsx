@@ -83,8 +83,21 @@ export default function AccountPage() {
         body: JSON.stringify({ email: newEmail.trim() })
       });
 
+      // Debug: Log the raw response text to see what we're getting
+      const responseText = await response.text();
+      console.log('🔍 Raw response:', responseText);
+      console.log('🔍 Response status:', response.status);
+      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
+      
       // Parse JSON response for both success and error cases
-      const data = await response.json();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ JSON Parse Error:', parseError);
+        console.error('❌ Raw response text:', responseText);
+        throw new Error(`Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update email');
