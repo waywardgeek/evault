@@ -41,17 +41,25 @@ async function debugAppleCallback(request: NextRequest) {
   }
 }
 
-// Check if this is an Apple callback POST request
+// Check if this is specifically an Apple callback POST request
 async function handleRequest(request: NextRequest) {
   const url = new URL(request.url)
   
-  // Temporary debug mode for Apple callback
+  // ONLY intercept Apple callback POST requests - let everything else use normal NextAuth
   if (url.pathname === '/api/auth/callback/apple' && request.method === 'POST') {
+    console.log('🍎 Intercepting Apple callback POST request')
     return debugAppleCallback(request)
   }
   
-  // For all other requests, use normal NextAuth
+  // For ALL other requests (providers, sessions, other callbacks, etc.), use normal NextAuth
   const handler = NextAuth(authOptions)
+  if (request.method === 'GET') {
+    return handler(request)
+  } else if (request.method === 'POST') {
+    return handler(request)
+  }
+  
+  // Fallback
   return handler(request)
 }
 
