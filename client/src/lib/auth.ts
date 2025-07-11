@@ -48,14 +48,21 @@ console.log('🍎 Apple Configuration:', {
   timestamp: new Date().toISOString()
 })
 
-// Process Apple secret - handle both JWT and private key formats
+// Process Apple secret - NextAuth v4 requires private key, not JWT
 function processAppleSecret(secret: string | undefined): string {
-  if (!secret) return ''
+  if (!secret) {
+    console.error('❌ APPLE_SECRET is not set!')
+    return ''
+  }
   
-  // If it's already a JWT (starts with ey), return as-is
+  // NextAuth v4 requires the private key, not a pre-generated JWT
   if (secret.startsWith('ey')) {
-    console.log('🔑 Using pre-generated JWT for Apple')
-    return secret
+    console.error('❌ APPLE_SECRET appears to be a JWT (starts with "ey"), but NextAuth v4 requires the private key!')
+    console.error('   Current length:', secret.length)
+    console.error('   Expected: ~252 characters for private key (without line breaks)')
+    console.error('   Please update APPLE_SECRET in Vercel to contain the private key content')
+    // Return empty string to prevent invalid_client errors
+    return ''
   }
   
   // If it's a private key without proper line breaks, fix it
@@ -74,11 +81,23 @@ function processAppleSecret(secret: string | undefined): string {
       fixed = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`
     }
     
-    console.log('🔑 Fixed private key length:', fixed.length)
+    console.log('✅ Fixed private key format')
+    console.log('   Original length:', secret.length)
+    console.log('   Fixed length:', fixed.length)
     return fixed
   }
   
-  // Return as-is if it's already properly formatted
+  // Check if it's already properly formatted
+  if (secret.includes('BEGIN PRIVATE KEY') && secret.includes('\n')) {
+    console.log('✅ Private key is already properly formatted')
+    console.log('   Length:', secret.length)
+    return secret
+  }
+  
+  // Unknown format
+  console.error('⚠️ APPLE_SECRET format not recognized')
+  console.error('   Length:', secret.length)
+  console.error('   First 50 chars:', secret.substring(0, 50))
   return secret
 }
 
