@@ -227,6 +227,34 @@ export const authOptions: AuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log('🔄 NextAuth Redirect:', { url, baseUrl });
       
+      // Log OAuth initiation for Apple
+      if (url.includes('appleid.apple.com/auth/authorize')) {
+        console.log('🍎 Apple OAuth URL:', url);
+        try {
+          const urlObj = new URL(url);
+          const params = Object.fromEntries(urlObj.searchParams);
+          
+          // Log to our custom endpoint
+          await fetch('https://evaultapp.com/api/oauth-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'apple_oauth_init',
+              url: url,
+              params: params,
+              clientId: params.client_id,
+              redirectUri: params.redirect_uri,
+              responseType: params.response_type,
+              responseMode: params.response_mode,
+              scope: params.scope,
+              state: params.state
+            })
+          }).catch(() => {});
+        } catch (e) {
+          console.error('Failed to parse Apple OAuth URL:', e);
+        }
+      }
+      
       // If no specific URL provided, redirect to vault
       if (url === baseUrl) {
         return `${baseUrl}/vault`;
