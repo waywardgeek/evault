@@ -93,9 +93,9 @@ echo "      - Domains: your-domain.com (or localhost for testing)"
 echo "      - Return URLs: https://your-domain.com/api/auth/callback/apple"
 echo "   "
 echo "   🔐 Key Configuration:"
-echo "      - Key ID: 6J7Q2G47CV (from generate-apple-secret.js)"
+echo "      - Key ID: 4S892A36WV (from generate-apple-secret.js)"
 echo "      - Team ID: B2SUY7SU9A (from generate-apple-secret.js)"
-echo "      - Private Key: AuthKey_6J7Q2G47CV.p8 (downloaded from Apple)"
+echo "      - Private Key: AuthKey_4S892A36WV.p8 (downloaded from Apple)"
 echo "   "
 echo "   🌐 Domain Verification:"
 echo "      - Domain association file must be accessible at:"
@@ -123,7 +123,7 @@ echo ""
 # 5. Generate new Apple secret if needed
 echo -e "${YELLOW}5. Apple JWT Secret Generation...${NC}"
 
-if [ -f "AuthKey_6J7Q2G47CV.p8" ]; then
+if [ -f "AuthKey_4S892A36WV.p8" ]; then
     echo -e "${GREEN}   ✅ Apple private key file found${NC}"
     
     read -p "   🔄 Generate new Apple JWT secret? (y/n): " -n 1 -r
@@ -142,7 +142,7 @@ if [ -f "AuthKey_6J7Q2G47CV.p8" ]; then
         fi
     fi
 else
-    echo -e "${RED}   ❌ Apple private key file (AuthKey_6J7Q2G47CV.p8) not found${NC}"
+    echo -e "${RED}   ❌ Apple private key file (AuthKey_4S892A36WV.p8) not found${NC}"
     echo -e "${YELLOW}   📥 Download your private key from Apple Developer Console${NC}"
 fi
 
