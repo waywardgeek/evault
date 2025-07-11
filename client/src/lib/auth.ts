@@ -103,6 +103,21 @@ function processAppleSecret(secret: string | undefined): string {
 
 const processedAppleSecret = processAppleSecret(process.env.APPLE_SECRET)
 
+// Additional debugging for Apple JWT generation
+console.log('🔐 Apple JWT Generation Debug:', {
+  hasProcessedSecret: !!processedAppleSecret,
+  processedSecretLength: processedAppleSecret?.length,
+  isPrivateKeyFormat: processedAppleSecret?.includes('BEGIN PRIVATE KEY'),
+  hasLineBreaks: processedAppleSecret?.includes('\n'),
+  hasTeamId: !!process.env.APPLE_TEAM_ID,
+  teamId: process.env.APPLE_TEAM_ID,
+  hasKeyId: !!process.env.APPLE_KEY_ID,
+  keyId: process.env.APPLE_KEY_ID,
+  timestamp: new Date().toISOString()
+})
+
+
+
 export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
@@ -112,7 +127,7 @@ export const authOptions: AuthOptions = {
     AppleProvider({
       clientId: process.env.APPLE_ID || '',
       clientSecret: processedAppleSecret,
-      // Let NextAuth use default configuration for Apple
+      checks: ['pkce'], // Disable state check - Apple doesn't return state in form_post
       profile(profile: any) {
         console.log('🍎 Apple Profile Processing:', {
           hasProfile: !!profile,
