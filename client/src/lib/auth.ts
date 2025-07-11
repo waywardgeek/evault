@@ -119,6 +119,26 @@ export const authOptions: AuthOptions = {
       return true; // Allow sign in even if server exchange fails (for development)
     },
     async jwt({ token, account, user }) {
+      console.log('🔍 JWT Callback Debug:', {
+        hasToken: !!token,
+        hasAccount: !!account,
+        hasUser: !!user,
+        accountProvider: account?.provider,
+        timestamp: new Date().toISOString()
+      });
+
+      // Apple-specific debugging
+      if (account?.provider === 'apple') {
+        console.log('🍎 Apple JWT Processing:', {
+          tokenKeys: token ? Object.keys(token) : [],
+          accountKeys: account ? Object.keys(account) : [],
+          hasIdToken: !!account.id_token,
+          hasAccessToken: !!account.access_token,
+          accountType: account.type,
+          timestamp: new Date().toISOString()
+        });
+      }
+
       // Persist server token and user data in JWT
       if (account?.serverToken) {
         token.serverToken = account.serverToken;
