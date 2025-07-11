@@ -39,6 +39,51 @@ console.log('🔍 NextAuth URL Configuration:', {
   timestamp: new Date().toISOString()
 })
 
+// Debug Apple configuration
+console.log('🍎 Apple Configuration:', {
+  appleId: process.env.APPLE_ID,
+  appleSecretLength: process.env.APPLE_SECRET?.length,
+  appleSecretFirst50: process.env.APPLE_SECRET?.substring(0, 50),
+  appleSecretLast50: process.env.APPLE_SECRET?.substring(process.env.APPLE_SECRET.length - 50),
+  timestamp: new Date().toISOString()
+})
+
+// Process Apple secret - handle both JWT and private key formats
+function processAppleSecret(secret: string | undefined): string {
+  if (!secret) return ''
+  
+  // If it's already a JWT (starts with ey), return as-is
+  if (secret.startsWith('ey')) {
+    console.log('🔑 Using pre-generated JWT for Apple')
+    return secret
+  }
+  
+  // If it's a private key without proper line breaks, fix it
+  if (secret.includes('BEGIN PRIVATE KEY') && !secret.includes('\n')) {
+    console.log('🔧 Fixing private key format for Apple')
+    // Add line breaks after the headers and before footers
+    let fixed = secret
+      .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
+      .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----')
+    
+    // Add line breaks every 64 characters in the key content
+    const keyMatch = fixed.match(/-----BEGIN PRIVATE KEY-----\n(.+)\n-----END PRIVATE KEY-----/)
+    if (keyMatch) {
+      const keyContent = keyMatch[1]
+      const formattedKey = keyContent.match(/.{1,64}/g)?.join('\n') || keyContent
+      fixed = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`
+    }
+    
+    console.log('🔑 Fixed private key length:', fixed.length)
+    return fixed
+  }
+  
+  // Return as-is if it's already properly formatted
+  return secret
+}
+
+const processedAppleSecret = processAppleSecret(process.env.APPLE_SECRET)
+
 export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
@@ -47,7 +92,7 @@ export const authOptions: AuthOptions = {
     }),
     AppleProvider({
       clientId: process.env.APPLE_ID || '',
-      clientSecret: process.env.APPLE_SECRET || '',
+      clientSecret: processedAppleSecret,
       authorization: {
         params: {
           scope: 'name email',
