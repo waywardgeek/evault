@@ -11,23 +11,52 @@ export const authOptions: AuthOptions = {
     AppleProvider({
       clientId: process.env.APPLE_ID || '',
       clientSecret: process.env.APPLE_SECRET || '',
+      authorization: {
+        params: {
+          scope: 'name email',
+          response_mode: 'form_post'
+        }
+      },
+      checks: ['pkce', 'state'],
+      profile(profile: any) {
+        console.log('🍎 Apple Profile Data:', profile);
+        return {
+          id: profile.sub,
+          name: profile.name ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim() : profile.email,
+          email: profile.email,
+          image: null,
+        }
+      }
     })
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      // Debug logging for Apple
+      if (account?.provider === 'apple') {
+        console.log('🍎 Apple Sign-In Debug:', {
+          provider: account.provider,
+          hasIdToken: !!account.id_token,
+          hasAccessToken: !!account.access_token,
+          user: user,
+          profile: profile,
+          account: account,
+          timestamp: new Date().toISOString()
+        });
+      }
+
       // Send the OAuth token to our backend server
       if ((account?.provider === 'google' && account.id_token) || 
-          (account?.provider === 'apple' && account.id_token)) {
+          (account?.provider === 'apple' && (account.id_token || account.access_token))) {
         try {
           // Exchange provider token for our server JWT by calling the real Go server
           const serverURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-          const response = await fetch(`${serverURL}/api/auth/callback`, {
+          const response = await fetch(`${serverURL}/auth/callback`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              id_token: account.id_token,
+              id_token: account?.provider === 'google' ? account.id_token : (account.id_token || account.access_token),
               provider: account.provider,
               user: {
                 id: user.id,
@@ -43,15 +72,23 @@ export const authOptions: AuthOptions = {
             // Store real server JWT token
             account.serverToken = data.token;
             account.serverUser = data.user;
+            console.log('✅ Server token exchange successful for', account.provider);
             return true;
           } else {
             const errorText = await response.text();
-            console.error('Server authentication failed:', errorText);
+            console.error('❌ Server authentication failed for', account.provider, ':', errorText);
           }
         } catch (error) {
-          console.error('Failed to exchange token with server:', error);
+          console.error('❌ Failed to exchange token with server for', account.provider, ':', error);
         }
       }
+      
+      // Allow Apple sign-in even if server exchange fails (for debugging)
+      if (account?.provider === 'apple') {
+        console.log('🍎 Allowing Apple sign-in without server exchange (debug mode)');
+        return true;
+      }
+      
       return true; // Allow sign in even if server exchange fails (for development)
     },
     async jwt({ token, account, user }) {
@@ -71,6 +108,8 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      console.log('🔄 NextAuth Redirect:', { url, baseUrl });
+      
       // If no specific URL provided, redirect to vault
       if (url === baseUrl) {
         return `${baseUrl}/vault`;
@@ -94,6 +133,57 @@ export const authOptions: AuthOptions = {
   session: {
     strategy: 'jwt',
   },
+  cookies: {
+    sessionToken: {
+      name: 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true
+      }
+    },
+    callbackUrl: {
+      name: 'next-auth.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: true
+      }
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true
+      }
+    },
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+        maxAge: 60 * 15, // 15 minutes
+      },
+    },
+  },
+  useSecureCookies: true,
+  debug: true, // Enable debug logging
+  logger: {
+    error(code: any, ...message: any[]) {
+      console.error('🚨 NextAuth Error:', code, message);
+    },
+    warn(code: any, ...message: any[]) {
+      console.warn('⚠️ NextAuth Warning:', code, message);
+    },
+    debug(code: any, ...message: any[]) {
+      console.log('🔍 NextAuth Debug:', code, message);
+    }
+  }
 }
 
 export default NextAuth(authOptions) 

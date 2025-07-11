@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "B2SUY7SU9A.com.evaultapp.web",
+        "paths": ["*"]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["B2SUY7SU9A.com.evaultapp.web"]
+  }
+} 

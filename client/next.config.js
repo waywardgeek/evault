@@ -9,6 +9,10 @@ const nextConfig = {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
     return [
       {
+        source: '/.well-known/apple-developer-domain-association.txt',
+        destination: '/api/apple-association',
+      },
+      {
         source: '/api/server/:path*',
         destination: `${apiUrl}/api/:path*`,
       },

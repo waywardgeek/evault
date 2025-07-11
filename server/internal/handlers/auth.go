@@ -141,16 +141,29 @@ func (h *Handler) HandleCallback(c *gin.Context) {
 				Verified:     claims.EmailVerified,
 			}
 		} else if provider == "apple" {
-			// For Apple, we'll trust NextAuth's validation for now
-			// In production, you'd want to validate the Apple ID token as well
-			log.Printf("DEBUG: Processing Apple ID token for user: %s", req.User.Email)
+			// Validate the Apple ID token for security
+			claims, err := h.authService.ValidateAppleIDToken(c.Request.Context(), req.IDToken)
+			if err != nil {
+				log.Printf("ERROR: Apple ID token validation failed: %v", err)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("Invalid Apple ID token: %v", err)})
+				return
+			}
 
-			// Create user from NextAuth provided data
+			log.Printf("DEBUG: Apple ID token validation successful for user: %s", claims.Email)
+
+			// Verify the email matches what NextAuth provided
+			if claims.Email != req.User.Email {
+				log.Printf("ERROR: Email mismatch - token: %s, provided: %s", claims.Email, req.User.Email)
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Email mismatch between ID token and user info"})
+				return
+			}
+
+			// Create user from validated Apple ID token data
 			userInfo = &database.User{
-				UserID:       req.User.ID,
-				Email:        req.User.Email,
+				UserID:       claims.Subject, // Use subject from verified token
+				Email:        claims.Email,   // Use email from verified token
 				AuthProvider: "apple",
-				Verified:     true, // Apple emails are generally verified
+				Verified:     claims.EmailVerified == "true", // Apple uses string "true"/"false"
 			}
 		} else {
 			log.Printf("ERROR: Unsupported provider: %s", provider)

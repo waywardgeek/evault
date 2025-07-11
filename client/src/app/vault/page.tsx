@@ -62,12 +62,12 @@ export default function VaultPage() {
       setLoading(true);
       
       // Check vault status
-      const statusResponse = await apiClient.get<VaultStatusResponse>('/api/vault/status');
+      const statusResponse = await apiClient.get<VaultStatusResponse>('/vault/status');
       setVaultStatus(statusResponse);
       
       if (statusResponse.has_vault) {
         // Load entry list
-        const entriesResponse = await apiClient.get<GetEntriesResponse>('/api/entries');
+        const entriesResponse = await apiClient.get<GetEntriesResponse>('/entries');
         setEntries(entriesResponse.entries.map((entry: any) => ({
           name: entry.name,
           hpkeBlob: entry.hpke_blob
@@ -105,7 +105,7 @@ export default function VaultPage() {
       };
       console.log(`📤 Payload: pin=${pin.length} chars, metadata=${metadata.length} chars`);
       
-      const serverResponse = await apiClient.post('/api/vault/register', registrationPayload);
+      const serverResponse = await apiClient.post('/vault/register', registrationPayload);
       
       console.log('✅ Server registration completed successfully');
       console.log(`📥 Server response:`, serverResponse);
@@ -150,7 +150,7 @@ export default function VaultPage() {
       
       // SECURITY: Get metadata from server, but client handles OpenADP recovery
       console.log('🌐 Requesting metadata from server...');
-      const recoverResponse = await apiClient.post<{ success: boolean; openadp_metadata: string }>('/api/vault/recover', { pin });
+      const recoverResponse = await apiClient.post<{ success: boolean; openadp_metadata: string }>('/vault/recover', { pin });
       
       console.log('📥 Server response:', recoverResponse);
       
@@ -303,7 +303,7 @@ export default function VaultPage() {
       const { hpkeBlob, deletionHash } = await crypto_service.encryptEntry(name, secret);
       
       // Add to server
-      await apiClient.post('/api/entries', {
+      await apiClient.post('/entries', {
         name,
         hpke_blob: hpkeBlob,
         deletion_hash: deletionHash
@@ -344,7 +344,7 @@ export default function VaultPage() {
       const { deletionPreHash } = await getDeletionPreHash(entry.hpkeBlob, privateKey);
       
       // Send delete request with proper deletion pre-hash
-      await apiClient.delete('/api/entries', {
+      await apiClient.delete('/entries', {
         name,
         deletion_pre_hash: deletionPreHash
       });

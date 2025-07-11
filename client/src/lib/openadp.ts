@@ -216,7 +216,7 @@ export class eVaultOpenADP {
       // Use apiClient which handles NextAuth authentication properly
       const { apiClient } = await import('../lib/api-client');
       
-      const result = await apiClient.post<{ success: boolean; error?: string }>('/api/vault/refresh', {
+      const result = await apiClient.post<{ success: boolean; error?: string }>('/vault/refresh', {
         updated_metadata: metadataBase64,
       });
       

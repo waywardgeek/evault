@@ -67,14 +67,14 @@ class ApiClient {
 
   // Public authentication endpoints
   async getAuthURL(request: AuthRequest = {}): Promise<AuthResponse> {
-    return this.makeRequest<AuthResponse>('/api/auth/url', {
+    return this.makeRequest<AuthResponse>('/auth/url', {
       method: 'POST',
       body: JSON.stringify(request),
     })
   }
 
   async handleCallback(request: CallbackRequest): Promise<CallbackResponse> {
-    return this.makeRequest<CallbackResponse>('/api/auth/callback', {
+    return this.makeRequest<CallbackResponse>('/auth/callback', {
       method: 'POST',
       body: JSON.stringify(request),
     })
@@ -82,11 +82,11 @@ class ApiClient {
 
   // Protected endpoints (require authentication)
   async getCurrentUser(): Promise<UserResponse> {
-    return this.makeRequest<UserResponse>('/api/user')
+    return this.makeRequest<UserResponse>('/user')
   }
 
   async refreshToken(): Promise<RefreshTokenResponse> {
-    return this.makeRequest<RefreshTokenResponse>('/api/user/refresh', {
+    return this.makeRequest<RefreshTokenResponse>('/user/refresh', {
       method: 'POST',
     })
   }
@@ -98,7 +98,7 @@ class ApiClient {
 
   // API status
   async getStatus(): Promise<any> {
-    return this.makeRequest<any>('/api/status')
+    return this.makeRequest<any>('/status')
   }
 
   // Generic HTTP methods for vault operations
