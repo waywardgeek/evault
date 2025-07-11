@@ -1,6 +1,7 @@
 import NextAuth, { AuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import AppleProvider from 'next-auth/providers/apple'
+import { SignJWT, importPKCS8 } from 'jose'
 
 // Determine the correct URL for NextAuth
 const getAuthUrl = () => {
@@ -48,49 +49,37 @@ console.log('🍎 Apple Configuration:', {
   timestamp: new Date().toISOString()
 })
 
-// Process Apple secret - NextAuth v4 requires private key, not JWT
+// Process Apple secret and generate JWT if needed
 function processAppleSecret(secret: string | undefined): string {
   if (!secret) {
     console.error('❌ APPLE_SECRET is not set!')
     return ''
   }
   
-  // NextAuth v4 requires the private key, not a pre-generated JWT
+  // If it's already a JWT, use it as-is
   if (secret.startsWith('ey')) {
-    console.error('❌ APPLE_SECRET appears to be a JWT (starts with "ey"), but NextAuth v4 requires the private key!')
-    console.error('   Current length:', secret.length)
-    console.error('   Expected: ~252 characters for private key (without line breaks)')
-    console.error('   Please update APPLE_SECRET in Vercel to contain the private key content')
-    // Return empty string to prevent invalid_client errors
-    return ''
+    console.log('✅ Using pre-generated Apple JWT')
+    console.log('   JWT length:', secret.length)
+    return secret
   }
   
-  // If it's a private key without proper line breaks, fix it
-  if (secret.includes('BEGIN PRIVATE KEY') && !secret.includes('\n')) {
-    console.log('🔧 Fixing private key format for Apple')
-    // Add line breaks after the headers and before footers
-    let fixed = secret
-      .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
-      .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----')
-    
-    // Add line breaks every 64 characters in the key content
-    const keyMatch = fixed.match(/-----BEGIN PRIVATE KEY-----\n(.+)\n-----END PRIVATE KEY-----/)
-    if (keyMatch) {
-      const keyContent = keyMatch[1]
-      const formattedKey = keyContent.match(/.{1,64}/g)?.join('\n') || keyContent
-      fixed = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`
+  // If it's a private key, format it properly
+  if (secret.includes('BEGIN PRIVATE KEY')) {
+    console.log('🔧 Found private key, formatting...')
+    // Add line breaks if missing
+    if (!secret.includes('\n')) {
+      let fixed = secret
+        .replace('-----BEGIN PRIVATE KEY-----', '-----BEGIN PRIVATE KEY-----\n')
+        .replace('-----END PRIVATE KEY-----', '\n-----END PRIVATE KEY-----')
+      
+      const keyMatch = fixed.match(/-----BEGIN PRIVATE KEY-----\n(.+)\n-----END PRIVATE KEY-----/)
+      if (keyMatch) {
+        const keyContent = keyMatch[1]
+        const formattedKey = keyContent.match(/.{1,64}/g)?.join('\n') || keyContent
+        fixed = `-----BEGIN PRIVATE KEY-----\n${formattedKey}\n-----END PRIVATE KEY-----`
+      }
+      return fixed
     }
-    
-    console.log('✅ Fixed private key format')
-    console.log('   Original length:', secret.length)
-    console.log('   Fixed length:', fixed.length)
-    return fixed
-  }
-  
-  // Check if it's already properly formatted
-  if (secret.includes('BEGIN PRIVATE KEY') && secret.includes('\n')) {
-    console.log('✅ Private key is already properly formatted')
-    console.log('   Length:', secret.length)
     return secret
   }
   
@@ -101,20 +90,52 @@ function processAppleSecret(secret: string | undefined): string {
   return secret
 }
 
+// Generate Apple JWT from private key
+async function generateAppleJWT(privateKey: string): Promise<string> {
+  try {
+    const teamId = process.env.APPLE_TEAM_ID || 'B2SUY7SU9A'
+    const keyId = process.env.APPLE_KEY_ID || '4S892A36WV'
+    const clientId = process.env.APPLE_ID || 'com.evaultapp.web'
+    
+    // Import the private key
+    const privateKeyObj = await importPKCS8(privateKey, 'ES256')
+    
+    // Create and sign the JWT
+    const jwt = await new SignJWT({
+      sub: clientId,
+    })
+      .setProtectedHeader({ alg: 'ES256', kid: keyId })
+      .setIssuedAt()
+      .setIssuer(teamId)
+      .setAudience('https://appleid.apple.com')
+      .setExpirationTime('6m') // 6 minutes - Apple requires < 6 months
+      .sign(privateKeyObj)
+    
+    console.log('✅ Generated Apple JWT for authentication')
+    return jwt
+  } catch (error) {
+    console.error('❌ Failed to generate Apple JWT:', error)
+    throw error
+  }
+}
+
 const processedAppleSecret = processAppleSecret(process.env.APPLE_SECRET)
 
-// Additional debugging for Apple JWT generation
-console.log('🔐 Apple JWT Generation Debug:', {
-  hasProcessedSecret: !!processedAppleSecret,
-  processedSecretLength: processedAppleSecret?.length,
-  isPrivateKeyFormat: processedAppleSecret?.includes('BEGIN PRIVATE KEY'),
-  hasLineBreaks: processedAppleSecret?.includes('\n'),
-  hasTeamId: !!process.env.APPLE_TEAM_ID,
-  teamId: process.env.APPLE_TEAM_ID,
-  hasKeyId: !!process.env.APPLE_KEY_ID,
-  keyId: process.env.APPLE_KEY_ID,
-  timestamp: new Date().toISOString()
-})
+// Check if we need to generate JWT or use existing one
+let appleClientSecret = processedAppleSecret
+if (processedAppleSecret && processedAppleSecret.includes('BEGIN PRIVATE KEY')) {
+  // We have a private key, need to generate JWT dynamically
+  console.log('🔑 Apple private key detected, will generate JWT dynamically')
+  // Create a getter that generates JWT on demand
+  appleClientSecret = {
+    teamId: process.env.APPLE_TEAM_ID || 'B2SUY7SU9A',
+    keyId: process.env.APPLE_KEY_ID || '4S892A36WV',
+    privateKey: processedAppleSecret,
+  } as any
+} else {
+  console.log('🔑 Using Apple secret as-is (JWT or empty)')
+}
+
 
 
 
@@ -126,7 +147,7 @@ export const authOptions: AuthOptions = {
     }),
     AppleProvider({
       clientId: process.env.APPLE_ID || '',
-      clientSecret: processedAppleSecret,
+      clientSecret: appleClientSecret,
       checks: ['pkce'], // Disable state check - Apple doesn't return state in form_post
       profile(profile: any) {
         console.log('🍎 Apple Profile Processing:', {
