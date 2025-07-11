@@ -1,5 +1,4 @@
 {
-  "name": "evault-client",
   "version": 2,
   "framework": "nextjs",
   "buildCommand": "npm run build",
@@ -47,16 +46,6 @@
     {
       "source": "/api/server/(.*)",
       "destination": "https://evault-server-768291069844.us-central1.run.app/api/$1"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/.well-known/apple-developer-domain-association.txt",
-      "dest": "/api/apple-association",
-      "headers": {
-        "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=86400"
-      }
     }
   ]
 } 
