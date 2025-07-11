@@ -115,10 +115,10 @@ export const authOptions: AuthOptions = {
       authorization: {
         params: {
           scope: 'name email',
-          response_mode: 'form_post'
+          response_mode: 'query' // Changed from 'form_post' to avoid cookie issues
         }
       },
-      checks: ['pkce', 'state'],
+      checks: ['state', 'pkce'],
       profile(profile: any) {
         console.log('🍎 Apple Profile Processing:', {
           hasProfile: !!profile,
