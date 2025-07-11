@@ -10,12 +10,24 @@
       "NODE_ENV": "production"
     }
   },
-  "functions": {
-    "app/api/apple-association/route.ts": {
-      "maxDuration": 10
-    }
-  },
   "headers": [
+    {
+      "source": "/.well-known/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
@@ -39,10 +51,6 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/.well-known/apple-developer-domain-association.txt",
-      "destination": "/api/apple-association"
-    },
     {
       "source": "/api/server/(.*)",
       "destination": "https://evault-server-768291069844.us-central1.run.app/api/$1"
