@@ -112,13 +112,7 @@ export const authOptions: AuthOptions = {
     AppleProvider({
       clientId: process.env.APPLE_ID || '',
       clientSecret: processedAppleSecret,
-      authorization: {
-        params: {
-          scope: 'name email',
-          response_mode: 'query' // Changed from 'form_post' to avoid cookie issues
-        }
-      },
-      checks: ['state', 'pkce'],
+      // Let NextAuth use default configuration for Apple
       profile(profile: any) {
         console.log('🍎 Apple Profile Processing:', {
           hasProfile: !!profile,
@@ -143,8 +137,8 @@ export const authOptions: AuthOptions = {
         
         return {
           id: profile.sub,
-          name: profile.name ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim() : profile.email,
-          email: profile.email,
+          name: profile.email || profile.sub, // Fallback to email or sub since name scope removed
+          email: profile.email || `${profile.sub}@appleid.com`, // Fallback email if not provided
           image: null,
         }
       }
