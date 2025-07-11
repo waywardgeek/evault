@@ -19,7 +19,14 @@ export const authOptions: AuthOptions = {
       },
       checks: ['pkce', 'state'],
       profile(profile: any) {
-        console.log('🍎 Apple Profile Data:', profile);
+        console.log('🍎 Apple Profile Processing:', {
+          hasProfile: !!profile,
+          profileKeys: profile ? Object.keys(profile) : [],
+          profileSub: profile?.sub,
+          profileEmail: profile?.email,
+          profileName: profile?.name,
+          timestamp: new Date().toISOString()
+        });
         return {
           id: profile.sub,
           name: profile.name ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim() : profile.email,
@@ -31,16 +38,36 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log('🔍 NextAuth SignIn Callback:', {
+        provider: account?.provider,
+        userId: user?.id,
+        userEmail: user?.email,
+        hasAccount: !!account,
+        hasProfile: !!profile,
+        timestamp: new Date().toISOString()
+      });
+
       // Debug logging for Apple
       if (account?.provider === 'apple') {
         console.log('🍎 Apple Sign-In Debug:', {
           provider: account.provider,
           hasIdToken: !!account.id_token,
           hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token,
+          tokenType: account.token_type,
+          expiresAt: account.expires_at,
           user: user,
           profile: profile,
           account: account,
           timestamp: new Date().toISOString()
+        });
+
+        // Check if we have the required environment variables
+        console.log('🔧 Apple Environment Check:', {
+          hasAppleId: !!process.env.APPLE_ID,
+          hasAppleSecret: !!process.env.APPLE_SECRET,
+          appleIdValue: process.env.APPLE_ID,
+          appleSecretLength: process.env.APPLE_SECRET?.length || 0
         });
       }
 
@@ -176,6 +203,14 @@ export const authOptions: AuthOptions = {
   logger: {
     error(code: any, ...message: any[]) {
       console.error('🚨 NextAuth Error:', code, message);
+      // Log Apple-specific errors with more detail
+      if (code?.toString().includes('apple') || code?.toString().includes('Apple')) {
+        console.error('🍎 Apple-specific error details:', {
+          code: code,
+          message: message,
+          timestamp: new Date().toISOString()
+        });
+      }
     },
     warn(code: any, ...message: any[]) {
       console.warn('⚠️ NextAuth Warning:', code, message);

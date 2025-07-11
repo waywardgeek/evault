@@ -3,9 +3,9 @@ const fs = require('fs');
 
 // Replace these values with your actual Apple Developer credentials
 const teamId = 'B2SUY7SU9A';        // Your Team ID from Apple Developer
-const keyId = '6J7Q2G47CV';          // Your Key ID from the downloaded key
+const keyId = '4S892A36WV';          // Your Key ID from the downloaded key
 const serviceId = 'com.evaultapp.web'; // Your Service ID from Step 2
-const privateKeyFile = './AuthKey_6J7Q2G47CV.p8'; // Your downloaded .p8 file
+const privateKeyFile = './AuthKey_4S892A36WV.p8'; // Your downloaded .p8 file
 
 try {
   // Read the private key file
