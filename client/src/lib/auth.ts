@@ -2,6 +2,43 @@ import NextAuth, { AuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import AppleProvider from 'next-auth/providers/apple'
 
+// Determine the correct URL for NextAuth
+const getAuthUrl = () => {
+  // First check if NEXTAUTH_URL is explicitly set
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL
+  }
+  
+  // In production, use the custom domain
+  if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
+    // Check if we have a custom production URL from Vercel
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    }
+    // Fallback to hardcoded custom domain
+    return 'https://evaultapp.com'
+  }
+  
+  // For preview deployments, use VERCEL_URL
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  
+  // Local development fallback
+  return 'http://localhost:3000'
+}
+
+// Log the determined URL for debugging
+const authUrl = getAuthUrl()
+console.log('🔍 NextAuth URL Configuration:', {
+  determinedUrl: authUrl,
+  nextAuthUrl: process.env.NEXTAUTH_URL || 'NOT_SET',
+  vercelUrl: process.env.VERCEL_URL || 'NOT_SET',
+  vercelEnv: process.env.VERCEL_ENV || 'NOT_SET',
+  nodeEnv: process.env.NODE_ENV || 'NOT_SET',
+  timestamp: new Date().toISOString()
+})
+
 export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
