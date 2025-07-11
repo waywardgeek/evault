@@ -185,7 +185,7 @@ export const authOptions: AuthOptions = {
       name: 'next-auth.session-token',
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         secure: true
       }
@@ -193,7 +193,7 @@ export const authOptions: AuthOptions = {
     callbackUrl: {
       name: 'next-auth.callback-url',
       options: {
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         secure: true
       }
@@ -202,7 +202,7 @@ export const authOptions: AuthOptions = {
       name: 'next-auth.csrf-token',
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         secure: true
       }
@@ -211,7 +211,18 @@ export const authOptions: AuthOptions = {
       name: 'next-auth.pkce.code_verifier',
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
+        path: '/',
+        secure: true,
+        maxAge: 60 * 15, // 15 minutes
+      },
+    },
+    // Add explicit state cookie configuration for Apple OAuth
+    state: {
+      name: 'next-auth.state',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
         path: '/',
         secure: true,
         maxAge: 60 * 15, // 15 minutes
