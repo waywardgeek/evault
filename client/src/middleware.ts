@@ -22,6 +22,26 @@ export function middleware(request: NextRequest) {
         parsedForm: new URLSearchParams(body),
         timestamp: new Date().toISOString()
       });
+      
+      // Log to our custom endpoint
+      const formData = new URLSearchParams(body);
+      fetch('https://evaultapp.com/api/oauth-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'apple_callback_received',
+          hasCode: formData.has('code'),
+          hasState: formData.has('state'),
+          hasError: formData.has('error'),
+          hasIdToken: formData.has('id_token'),
+          error: formData.get('error'),
+          errorDescription: formData.get('error_description'),
+          formKeys: Array.from(formData.keys()),
+          headers: Object.fromEntries(request.headers.entries())
+        })
+      }).catch(err => {
+        console.log('🍎 Could not log to endpoint:', err.message);
+      });
     }).catch(err => {
       console.log('🍎 Could not read body:', err.message);
     });

@@ -64,6 +64,19 @@ export const authOptions: AuthOptions = {
           profileName: profile?.name,
           timestamp: new Date().toISOString()
         });
+        
+        // Log to our custom endpoint
+        fetch('https://evaultapp.com/api/oauth-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'apple_profile',
+            provider: 'apple',
+            profile: profile,
+            hasProfile: !!profile
+          })
+        }).catch(() => {});
+        
         return {
           id: profile.sub,
           name: profile.name ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim() : profile.email,
@@ -83,6 +96,26 @@ export const authOptions: AuthOptions = {
         hasProfile: !!profile,
         timestamp: new Date().toISOString()
       });
+      
+      // Log to our custom endpoint
+      try {
+        await fetch('https://evaultapp.com/api/oauth-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'signin_callback',
+            provider: account?.provider,
+            userId: user?.id,
+            userEmail: user?.email,
+            hasIdToken: !!account?.id_token,
+            hasAccessToken: !!account?.access_token,
+            tokenType: account?.token_type,
+            error: account?.error
+          })
+        });
+      } catch (e) {
+        console.error('Failed to log:', e);
+      }
 
       // Debug logging for Apple
       if (account?.provider === 'apple') {
@@ -279,6 +312,18 @@ export const authOptions: AuthOptions = {
           timestamp: new Date().toISOString()
         });
       }
+      
+      // Log errors to our custom endpoint
+      fetch('https://evaultapp.com/api/oauth-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: 'nextauth_error',
+          code: code?.toString(),
+          message: message,
+          isAppleError: code?.toString().includes('apple') || code?.toString().includes('Apple')
+        })
+      }).catch(() => {});
     },
     warn(code: any, ...message: any[]) {
       console.warn('⚠️ NextAuth Warning:', code, message);
