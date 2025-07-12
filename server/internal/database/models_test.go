@@ -63,7 +63,6 @@ func setupTestTables(db *sql.DB) error {
 		openadp_metadata_a TEXT,
 		openadp_metadata_b TEXT,
 		openadp_metadata_current BOOLEAN DEFAULT TRUE,
-		vault_public_key TEXT,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	)`

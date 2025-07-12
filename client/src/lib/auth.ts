@@ -239,9 +239,9 @@ export const authOptions: AuthOptions = {
       if ((account?.provider === 'google' && account.id_token) || 
           (account?.provider === 'apple' && (account.id_token || account.access_token))) {
         try {
-          // Exchange provider token for our server JWT by calling the real Go server
-          const serverURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-          const response = await fetch(`${serverURL}/auth/callback`, {
+          // Exchange provider token for our server JWT by calling our API route
+          const baseUrl = authUrl;
+          const response = await fetch(`${baseUrl}/api/auth/callback`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -274,13 +274,8 @@ export const authOptions: AuthOptions = {
         }
       }
       
-      // Allow Apple sign-in even if server exchange fails (for debugging)
-      if (account?.provider === 'apple') {
-        console.log('🍎 Allowing Apple sign-in without server exchange (debug mode)');
-        return true;
-      }
-      
-      return true; // Allow sign in even if server exchange fails (for development)
+      // Allow sign-in to proceed
+      return true;
     },
     async jwt({ token, account, user }) {
       console.log('🔍 JWT Callback Debug:', {
@@ -314,7 +309,21 @@ export const authOptions: AuthOptions = {
       // Send server token and user data to the client
       if (token.serverToken) {
         session.serverToken = token.serverToken as string;
-        session.serverUser = token.serverUser as any;
+        
+        // Transform serverUser to match API types (snake_case)
+        if (token.serverUser) {
+          const dbUser = token.serverUser as any;
+          session.serverUser = {
+            user_id: dbUser.userId || dbUser.user_id,
+            email: dbUser.email,
+            phone_number: dbUser.phoneNumber || dbUser.phone_number || undefined,
+            auth_provider: dbUser.authProvider || dbUser.auth_provider,
+            verified: dbUser.verified,
+            openadp_metadata: dbUser.openadpMetadataA || dbUser.openadpMetadataB || dbUser.openadp_metadata || undefined,
+            created_at: dbUser.createdAt || dbUser.created_at,
+            updated_at: dbUser.updatedAt || dbUser.updated_at,
+          };
+        }
       }
       return session;
     },
@@ -349,10 +358,6 @@ export const authOptions: AuthOptions = {
         }
       }
       
-      // If no specific URL provided, redirect to vault
-      if (url === baseUrl) {
-        return `${baseUrl}/vault`;
-      }
       // If it's a relative URL, make it absolute
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
@@ -361,8 +366,8 @@ export const authOptions: AuthOptions = {
       if (new URL(url).origin === baseUrl) {
         return url;
       }
-      // Default to vault
-      return `${baseUrl}/vault`;
+      // Default to home
+      return baseUrl;
     },
   },
   pages: {

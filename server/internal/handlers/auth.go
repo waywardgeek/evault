@@ -115,6 +115,10 @@ func (h *Handler) HandleCallback(c *gin.Context) {
 			provider = "google"
 		}
 
+		var email string
+		var verified bool
+		var providerUserID string
+
 		if provider == "google" {
 			// Validate the ID token with Google (for security)
 			claims, err := h.authService.ValidateGoogleIDToken(c.Request.Context(), req.IDToken)
@@ -133,13 +137,9 @@ func (h *Handler) HandleCallback(c *gin.Context) {
 				return
 			}
 
-			// Create user from NextAuth provided data, but use claims for verification
-			userInfo = &database.User{
-				UserID:       claims.Subject, // Use subject from verified token
-				Email:        claims.Email,   // Use email from verified token
-				AuthProvider: "google",
-				Verified:     claims.EmailVerified,
-			}
+			email = claims.Email
+			verified = claims.EmailVerified
+			providerUserID = claims.Subject
 		} else if provider == "apple" {
 			// Validate the Apple ID token for security
 			claims, err := h.authService.ValidateAppleIDToken(c.Request.Context(), req.IDToken)
@@ -158,17 +158,42 @@ func (h *Handler) HandleCallback(c *gin.Context) {
 				return
 			}
 
-			// Create user from validated Apple ID token data
-			userInfo = &database.User{
-				UserID:       claims.Subject, // Use subject from verified token
-				Email:        claims.Email,   // Use email from verified token
-				AuthProvider: "apple",
-				Verified:     claims.EmailVerified == "true", // Apple uses string "true"/"false"
-			}
+			email = claims.Email
+			verified = claims.EmailVerified == "true"
+			providerUserID = claims.Subject
 		} else {
 			log.Printf("ERROR: Unsupported provider: %s", provider)
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Unsupported provider: %s", provider)})
 			return
+		}
+
+		// EMAIL-BASED USER LOOKUP: Check if user exists by email
+		existingUser, err := h.db.GetUserByEmail(email)
+		if err != nil {
+			// User doesn't exist, create new one
+			userInfo = &database.User{
+				UserID:       providerUserID, // Keep provider ID for now
+				Email:        email,
+				AuthProvider: provider,
+				Verified:     verified,
+			}
+
+			log.Printf("Creating new user with email: %s, provider: %s", email, provider)
+			if err := h.db.CreateUser(userInfo); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+				return
+			}
+		} else {
+			// User exists, update auth provider if different
+			if existingUser.AuthProvider != provider {
+				log.Printf("Updating auth provider for user %s from %s to %s",
+					email, existingUser.AuthProvider, provider)
+				if err := h.db.UpdateAuthProvider(existingUser.UserID, provider); err != nil {
+					log.Printf("ERROR: Failed to update auth provider: %v", err)
+					// Continue anyway, not critical
+				}
+			}
+			userInfo = existingUser
 		}
 	} else if req.Code != "" {
 		// Handle direct OAuth code flow
@@ -184,20 +209,36 @@ func (h *Handler) HandleCallback(c *gin.Context) {
 			return
 		}
 
-		userInfo = &database.User{
-			UserID:       googleUserInfo.ID,
-			Email:        googleUserInfo.Email,
-			AuthProvider: "google",
-			Verified:     googleUserInfo.Verified,
+		// EMAIL-BASED USER LOOKUP for direct OAuth flow
+		existingUser, err := h.db.GetUserByEmail(googleUserInfo.Email)
+		if err != nil {
+			// User doesn't exist, create new one
+			userInfo = &database.User{
+				UserID:       googleUserInfo.ID,
+				Email:        googleUserInfo.Email,
+				AuthProvider: "google",
+				Verified:     googleUserInfo.Verified,
+			}
+
+			log.Printf("Creating new user with email: %s, provider: google", googleUserInfo.Email)
+			if err := h.db.CreateUser(userInfo); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+				return
+			}
+		} else {
+			// User exists, update auth provider if different
+			if existingUser.AuthProvider != "google" {
+				log.Printf("Updating auth provider for user %s from %s to google",
+					googleUserInfo.Email, existingUser.AuthProvider)
+				if err := h.db.UpdateAuthProvider(existingUser.UserID, "google"); err != nil {
+					log.Printf("ERROR: Failed to update auth provider: %v", err)
+					// Continue anyway, not critical
+				}
+			}
+			userInfo = existingUser
 		}
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required authentication data"})
-		return
-	}
-
-	// Create or update user in database
-	if err := h.db.CreateUser(userInfo); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 

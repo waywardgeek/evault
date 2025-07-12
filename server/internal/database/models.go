@@ -15,7 +15,6 @@ type User struct {
 	OpenADPMetadataA       *string   `db:"openadp_metadata_a" json:"openadp_metadata_a,omitempty"`
 	OpenADPMetadataB       *string   `db:"openadp_metadata_b" json:"openadp_metadata_b,omitempty"`
 	OpenADPMetadataCurrent bool      `db:"openadp_metadata_current" json:"openadp_metadata_current"`
-	VaultPublicKey         *string   `db:"vault_public_key" json:"vault_public_key,omitempty"`
 	CreatedAt              time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt              time.Time `db:"updated_at" json:"updated_at"`
 }
@@ -32,8 +31,8 @@ type Entry struct {
 // User operations
 func (s *Service) CreateUser(user *User) error {
 	query := `
-		INSERT INTO users (user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, vault_public_key, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO users (user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		ON CONFLICT (user_id) DO UPDATE SET
 			email = EXCLUDED.email,
 			phone_number = EXCLUDED.phone_number,
@@ -45,13 +44,13 @@ func (s *Service) CreateUser(user *User) error {
 	user.CreatedAt = now
 	user.UpdatedAt = now
 
-	_, err := s.db.Exec(query, user.UserID, user.Email, user.PhoneNumber, user.AuthProvider, user.Verified, user.OpenADPMetadataA, user.OpenADPMetadataB, user.OpenADPMetadataCurrent, user.VaultPublicKey, user.CreatedAt, user.UpdatedAt)
+	_, err := s.db.Exec(query, user.UserID, user.Email, user.PhoneNumber, user.AuthProvider, user.Verified, user.OpenADPMetadataA, user.OpenADPMetadataB, user.OpenADPMetadataCurrent, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
 func (s *Service) GetUserByID(userID string) (*User, error) {
 	query := `
-		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, vault_public_key, created_at, updated_at
+		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, created_at, updated_at
 		FROM users
 		WHERE user_id = $1
 	`
@@ -66,7 +65,6 @@ func (s *Service) GetUserByID(userID string) (*User, error) {
 		&user.OpenADPMetadataA,
 		&user.OpenADPMetadataB,
 		&user.OpenADPMetadataCurrent,
-		&user.VaultPublicKey,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -83,7 +81,7 @@ func (s *Service) GetUserByID(userID string) (*User, error) {
 
 func (s *Service) GetUserByEmail(email string) (*User, error) {
 	query := `
-		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, vault_public_key, created_at, updated_at
+		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -98,7 +96,6 @@ func (s *Service) GetUserByEmail(email string) (*User, error) {
 		&user.OpenADPMetadataA,
 		&user.OpenADPMetadataB,
 		&user.OpenADPMetadataCurrent,
-		&user.VaultPublicKey,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -168,17 +165,6 @@ func (s *Service) SetInitialOpenADPMetadata(userID string, metadata string) erro
 	`
 
 	_, err := s.db.Exec(query, userID, metadata, time.Now())
-	return err
-}
-
-func (s *Service) UpdateUserVaultPublicKey(userID string, publicKey string) error {
-	query := `
-		UPDATE users
-		SET vault_public_key = $2, updated_at = $3
-		WHERE user_id = $1
-	`
-
-	_, err := s.db.Exec(query, userID, publicKey, time.Now())
 	return err
 }
 
@@ -286,6 +272,18 @@ func (s *Service) UpdateUserEmail(userID string, email string) error {
 	return err
 }
 
+// UpdateAuthProvider updates the most recent auth provider used
+func (s *Service) UpdateAuthProvider(userID string, provider string) error {
+	query := `
+		UPDATE users
+		SET auth_provider = $2, updated_at = $3
+		WHERE user_id = $1
+	`
+
+	_, err := s.db.Exec(query, userID, provider, time.Now())
+	return err
+}
+
 // UserStats represents user statistics
 type UserStats struct {
 	TotalUsers       int `json:"total_users"`
@@ -330,4 +328,43 @@ func (s *Service) GetUserStats() (*UserStats, error) {
 	}
 
 	return &stats, nil
+}
+
+// GetUsersByEmail returns all users with a specific email address
+func (s *Service) GetUsersByEmail(email string) ([]User, error) {
+	query := `
+		SELECT user_id, email, phone_number, auth_provider, verified, openadp_metadata_a, openadp_metadata_b, openadp_metadata_current, created_at, updated_at
+		FROM users
+		WHERE email = $1
+		ORDER BY created_at DESC
+	`
+
+	rows, err := s.db.Query(query, email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query users by email: %w", err)
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		err := rows.Scan(
+			&user.UserID,
+			&user.Email,
+			&user.PhoneNumber,
+			&user.AuthProvider,
+			&user.Verified,
+			&user.OpenADPMetadataA,
+			&user.OpenADPMetadataB,
+			&user.OpenADPMetadataCurrent,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }

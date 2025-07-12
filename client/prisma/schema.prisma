@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model User {
+  userId                 String   @id @map("user_id")
+  email                  String   @unique
+  phoneNumber            String?  @map("phone_number")
+  authProvider           String   @map("auth_provider")
+  verified               Boolean  @default(false)
+  openadpMetadataA       String?  @map("openadp_metadata_a") @db.Text
+  openadpMetadataB       String?  @map("openadp_metadata_b") @db.Text
+  openadpMetadataCurrent Boolean  @default(true) @map("openadp_metadata_current")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+  
+  entries Entry[]
+  
+  @@map("users")
+}
+
+model Entry {
+  userId       String   @map("user_id")
+  name         String
+  hpkeBlob     Bytes    @map("hpke_blob")
+  deletionHash Bytes    @map("deletion_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  user User @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@id([userId, name])
+  @@map("entries")
+}

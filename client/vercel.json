@@ -1,59 +1,20 @@
 {
-  "version": 2,
   "framework": "nextjs",
-  "buildCommand": "npm run build",
+  "buildCommand": "prisma generate && npm run build",
   "outputDirectory": ".next",
-  "installCommand": "npm install",
-  "devCommand": "npm run dev",
-  "build": {
-    "env": {
-      "NODE_ENV": "production"
+  "regions": ["iad1"],
+  "functions": {
+    "src/app/api/auth/[...nextauth]/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/vault/*/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/entries/*/route.ts": {
+      "maxDuration": 10
     }
   },
-  "headers": [
-    {
-      "source": "/.well-known/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=86400"
-        },
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/server/(.*)",
-      "destination": "https://evault-server-768291069844.us-central1.run.app/api/$1"
-    }
-  ]
+  "env": {
+    "NODE_ENV": "production"
+  }
 } 

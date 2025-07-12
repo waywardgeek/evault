@@ -14,7 +14,8 @@ class ApiClient {
   private token: string | null = null
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    // Now using Next.js API routes instead of external Go server
+    this.baseURL = '/api'
   }
 
   async setToken(token: string) {

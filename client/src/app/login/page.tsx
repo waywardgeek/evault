@@ -30,17 +30,10 @@ function LoginContent() {
       setError(null)
       
       // Use NextAuth to sign in with Google
-      const result = await signIn('google', {
+      await signIn('google', {
         callbackUrl: callbackUrl,
-        redirect: false,
+        redirect: true,
       })
-
-      if (result?.error) {
-        setError('Authentication failed. Please try again.')
-      } else if (result?.url) {
-        // Redirect to the callback URL or dashboard
-        router.push(result.url)
-      }
     } catch (error) {
       console.error('Sign in error:', error)
       setError('An unexpected error occurred. Please try again.')
@@ -55,17 +48,10 @@ function LoginContent() {
       setError(null)
       
       // Use NextAuth to sign in with Apple
-      const result = await signIn('apple', {
+      await signIn('apple', {
         callbackUrl: callbackUrl,
-        redirect: false,
+        redirect: true,
       })
-
-      if (result?.error) {
-        setError('Authentication failed. Please try again.')
-      } else if (result?.url) {
-        // Redirect to the callback URL or dashboard
-        router.push(result.url)
-      }
     } catch (error) {
       console.error('Sign in error:', error)
       setError('An unexpected error occurred. Please try again.')
