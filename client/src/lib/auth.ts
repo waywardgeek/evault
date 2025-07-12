@@ -31,23 +31,6 @@ const getAuthUrl = () => {
 
 // Log the determined URL for debugging
 const authUrl = getAuthUrl()
-console.log('🔍 NextAuth URL Configuration:', {
-  determinedUrl: authUrl,
-  nextAuthUrl: process.env.NEXTAUTH_URL || 'NOT_SET',
-  vercelUrl: process.env.VERCEL_URL || 'NOT_SET',
-  vercelEnv: process.env.VERCEL_ENV || 'NOT_SET',
-  nodeEnv: process.env.NODE_ENV || 'NOT_SET',
-  timestamp: new Date().toISOString()
-})
-
-// Debug Apple configuration
-console.log('🍎 Apple Configuration:', {
-  appleId: process.env.APPLE_ID,
-  appleSecretLength: process.env.APPLE_SECRET?.length,
-  appleSecretFirst50: process.env.APPLE_SECRET?.substring(0, 50),
-  appleSecretLast50: process.env.APPLE_SECRET?.substring(process.env.APPLE_SECRET.length - 50),
-  timestamp: new Date().toISOString()
-})
 
 // Process Apple secret and generate JWT if needed
 function processAppleSecret(secret: string | undefined): string {
@@ -427,7 +410,7 @@ export const authOptions: AuthOptions = {
     },
   },
   useSecureCookies: true,
-  debug: true, // Enable debug logging
+  debug: process.env.NODE_ENV === 'development', // Only debug in development
   logger: {
     error(code: any, ...message: any[]) {
       console.error('🚨 NextAuth Error:', code, message);
