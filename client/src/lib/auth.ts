@@ -2,6 +2,7 @@ import NextAuth, { AuthOptions } from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import AppleProvider from 'next-auth/providers/apple'
 import { SignJWT, importPKCS8 } from 'jose'
+import { logger } from '@/lib/logger'
 
 // Determine the correct URL for NextAuth
 const getAuthUrl = () => {
@@ -35,20 +36,20 @@ const authUrl = getAuthUrl()
 // Process Apple secret and generate JWT if needed
 function processAppleSecret(secret: string | undefined): string {
   if (!secret) {
-    console.error('❌ APPLE_SECRET is not set!')
+    logger.error('❌ APPLE_SECRET is not set!')
     return ''
   }
   
   // If it's already a JWT, use it as-is
   if (secret.startsWith('ey')) {
-    console.log('✅ Using pre-generated Apple JWT')
-    console.log('   JWT length:', secret.length)
+    logger.debug('✅ Using pre-generated Apple JWT')
+    logger.debug('   JWT length:', secret.length)
     return secret
   }
   
   // If it's a private key, format it properly
   if (secret.includes('BEGIN PRIVATE KEY')) {
-    console.log('🔧 Found private key, formatting...')
+    logger.debug('🔧 Found private key, formatting...')
     // Add line breaks if missing
     if (!secret.includes('\n')) {
       let fixed = secret
@@ -67,9 +68,9 @@ function processAppleSecret(secret: string | undefined): string {
   }
   
   // Unknown format
-  console.error('⚠️ APPLE_SECRET format not recognized')
-  console.error('   Length:', secret.length)
-  console.error('   First 50 chars:', secret.substring(0, 50))
+  logger.error('⚠️ APPLE_SECRET format not recognized')
+  logger.error('   Length:', secret.length)
+  logger.error('   First 50 chars:', secret.substring(0, 50))
   return secret
 }
 
@@ -94,10 +95,10 @@ async function generateAppleJWT(privateKey: string): Promise<string> {
       .setExpirationTime('6m') // 6 minutes - Apple requires < 6 months
       .sign(privateKeyObj)
     
-    console.log('✅ Generated Apple JWT for authentication')
+    logger.debug('✅ Generated Apple JWT for authentication')
     return jwt
   } catch (error) {
-    console.error('❌ Failed to generate Apple JWT:', error)
+    logger.error('❌ Failed to generate Apple JWT:', error)
     throw error
   }
 }
@@ -108,7 +109,7 @@ const processedAppleSecret = processAppleSecret(process.env.APPLE_SECRET)
 let appleClientSecret = processedAppleSecret
 if (processedAppleSecret && processedAppleSecret.includes('BEGIN PRIVATE KEY')) {
   // We have a private key, need to generate JWT dynamically
-  console.log('🔑 Apple private key detected, will generate JWT dynamically')
+  logger.debug('🔑 Apple private key detected, will generate JWT dynamically')
   // Create a getter that generates JWT on demand
   appleClientSecret = {
     teamId: process.env.APPLE_TEAM_ID || 'B2SUY7SU9A',
@@ -116,7 +117,7 @@ if (processedAppleSecret && processedAppleSecret.includes('BEGIN PRIVATE KEY')) 
     privateKey: processedAppleSecret,
   } as any
 } else {
-  console.log('🔑 Using Apple secret as-is (JWT or empty)')
+  logger.debug('🔑 Using Apple secret as-is (JWT or empty)')
 }
 
 
@@ -133,7 +134,7 @@ export const authOptions: AuthOptions = {
       clientSecret: appleClientSecret,
       checks: ['pkce'], // Disable state check - Apple doesn't return state in form_post
       profile(profile: any) {
-        console.log('🍎 Apple Profile Processing:', {
+        logger.debug('🍎 Apple Profile Processing:', {
           hasProfile: !!profile,
           profileKeys: profile ? Object.keys(profile) : [],
           profileSub: profile?.sub,
@@ -165,7 +166,7 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('🔍 NextAuth SignIn Callback:', {
+      logger.debug('🔍 NextAuth SignIn Callback:', {
         provider: account?.provider,
         userId: user?.id,
         userEmail: user?.email,
@@ -191,12 +192,12 @@ export const authOptions: AuthOptions = {
           })
         });
       } catch (e) {
-        console.error('Failed to log:', e);
+        logger.error('Failed to log:', e);
       }
 
       // Debug logging for Apple
       if (account?.provider === 'apple') {
-        console.log('🍎 Apple Sign-In Debug:', {
+        logger.debug('🍎 Apple Sign-In Debug:', {
           provider: account.provider,
           hasIdToken: !!account.id_token,
           hasAccessToken: !!account.access_token,
@@ -210,7 +211,7 @@ export const authOptions: AuthOptions = {
         });
 
         // Check if we have the required environment variables
-        console.log('🔧 Apple Environment Check:', {
+        logger.debug('🔧 Apple Environment Check:', {
           hasAppleId: !!process.env.APPLE_ID,
           hasAppleSecret: !!process.env.APPLE_SECRET,
           appleIdValue: process.env.APPLE_ID,
@@ -246,14 +247,14 @@ export const authOptions: AuthOptions = {
             // Store real server JWT token
             account.serverToken = data.token;
             account.serverUser = data.user;
-            console.log('✅ Server token exchange successful for', account.provider);
+            logger.debug('✅ Server token exchange successful for', account.provider);
             return true;
           } else {
             const errorText = await response.text();
-            console.error('❌ Server authentication failed for', account.provider, ':', errorText);
+            logger.error('❌ Server authentication failed for', account.provider, ':', errorText);
           }
         } catch (error) {
-          console.error('❌ Failed to exchange token with server for', account.provider, ':', error);
+          logger.error('❌ Failed to exchange token with server for', account.provider, ':', error);
         }
       }
       
@@ -261,7 +262,7 @@ export const authOptions: AuthOptions = {
       return true;
     },
     async jwt({ token, account, user }) {
-      console.log('🔍 JWT Callback Debug:', {
+      logger.debug('🔍 JWT Callback Debug:', {
         hasToken: !!token,
         hasAccount: !!account,
         hasUser: !!user,
@@ -271,7 +272,7 @@ export const authOptions: AuthOptions = {
 
       // Apple-specific debugging
       if (account?.provider === 'apple') {
-        console.log('🍎 Apple JWT Processing:', {
+        logger.debug('🍎 Apple JWT Processing:', {
           tokenKeys: token ? Object.keys(token) : [],
           accountKeys: account ? Object.keys(account) : [],
           hasIdToken: !!account.id_token,
@@ -311,11 +312,11 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      console.log('🔄 NextAuth Redirect:', { url, baseUrl });
+      logger.debug('🔄 NextAuth Redirect:', { url, baseUrl });
       
       // Log OAuth initiation for Apple
       if (url.includes('appleid.apple.com/auth/authorize')) {
-        console.log('🍎 Apple OAuth URL:', url);
+        logger.debug('🍎 Apple OAuth URL:', url);
         try {
           const urlObj = new URL(url);
           const params = Object.fromEntries(urlObj.searchParams);
@@ -337,7 +338,7 @@ export const authOptions: AuthOptions = {
             })
           }).catch(() => {});
         } catch (e) {
-          console.error('Failed to parse Apple OAuth URL:', e);
+          logger.error('Failed to parse Apple OAuth URL:', e);
         }
       }
       
@@ -413,10 +414,10 @@ export const authOptions: AuthOptions = {
   debug: process.env.NODE_ENV === 'development', // Only debug in development
   logger: {
     error(code: any, ...message: any[]) {
-      console.error('🚨 NextAuth Error:', code, message);
+      logger.error('🚨 NextAuth Error:', code, message);
       // Log Apple-specific errors with more detail
       if (code?.toString().includes('apple') || code?.toString().includes('Apple')) {
-        console.error('🍎 Apple-specific error details:', {
+        logger.error('🍎 Apple-specific error details:', {
           code: code,
           message: message,
           timestamp: new Date().toISOString()
@@ -436,10 +437,10 @@ export const authOptions: AuthOptions = {
       }).catch(() => {});
     },
     warn(code: any, ...message: any[]) {
-      console.warn('⚠️ NextAuth Warning:', code, message);
+      logger.warn('⚠️ NextAuth Warning:', code, message);
     },
     debug(code: any, ...message: any[]) {
-      console.log('🔍 NextAuth Debug:', code, message);
+      logger.debug('🔍 NextAuth Debug:', code, message);
     }
   }
 }

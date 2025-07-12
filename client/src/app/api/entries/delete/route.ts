@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware'
+import { logger } from '@/lib/logger';
 import { deleteEntry, getEntry } from '@/lib/db'
+import { logger } from '@/lib/logger';
 import crypto from 'crypto'
+import { logger } from '@/lib/logger';
 
 export async function DELETE(request: NextRequest) {
   return withAuth(request, async (req: AuthenticatedRequest) => {
@@ -41,7 +45,7 @@ export async function DELETE(request: NextRequest) {
         message: 'Entry deleted successfully',
       })
     } catch (error) {
-      console.error('Failed to delete entry:', error)
+      logger.error('Failed to delete entry:', error)
       return NextResponse.json(
         { error: 'Failed to delete entry' },
         { status: 500 }

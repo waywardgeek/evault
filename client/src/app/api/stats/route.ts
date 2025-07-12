@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger';
 import { getUserStats } from '@/lib/db'
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,7 +9,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(stats)
   } catch (error) {
-    console.error('Failed to get user stats:', error)
+    logger.error('Failed to get user stats:', error)
     return NextResponse.json(
       { error: 'Failed to get user stats' },
       { status: 500 }

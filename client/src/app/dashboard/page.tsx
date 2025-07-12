@@ -1,10 +1,15 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
+import { logger } from '@/lib/logger';
 import { useRouter } from 'next/navigation'
+import { logger } from '@/lib/logger';
 import { useEffect, useState } from 'react'
+import { logger } from '@/lib/logger';
 import { apiClient } from '@/lib/api-client'
+import { logger } from '@/lib/logger';
 import type { UserResponse } from '../../../../shared/types/api'
+import { logger } from '@/lib/logger';
 
 interface UserStats {
   total_users: number
@@ -42,7 +47,7 @@ export default function DashboardPage() {
             setUserStats(stats)
           }
         } catch (err) {
-          console.log('Failed to fetch user stats:', err)
+          logger.debug('Failed to fetch user stats:', err)
         }
 
         // If we have a session, try to get server user data
@@ -52,7 +57,7 @@ export default function DashboardPage() {
             setServerUser(userData)
           } catch (err) {
             // Expected to fail since we're using mock tokens
-            console.log('Server auth not implemented yet:', err)
+            logger.debug('Server auth not implemented yet:', err)
           }
         }
       } catch (err) {

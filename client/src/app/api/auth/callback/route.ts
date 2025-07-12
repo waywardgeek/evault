@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import { createUser, getUserByEmail, updateUserAuthProvider } from '@/lib/db'
 import { generateJWT } from '@/lib/jwt'
+import { withRateLimit, RATE_LIMITS } from '@/lib/rate-limit'
 
-export async function POST(request: NextRequest) {
+async function handleAuthCallback(request: NextRequest) {
   try {
     const body = await request.json()
     
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
       user: apiUser,
     })
   } catch (error) {
-    console.error('Auth callback error:', error)
+    logger.error('Auth callback error:', error)
     return NextResponse.json(
       { error: 'Authentication failed' },
       { status: 500 }
@@ -55,7 +57,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Apply rate limiting to auth endpoints
+export const POST = withRateLimit(RATE_LIMITS.AUTH, handleAuthCallback)
+
 // Support GET for browser redirects (OAuth flow)
-export async function GET(request: NextRequest) {
-  return POST(request)
-} 
+export const GET = withRateLimit(RATE_LIMITS.AUTH, handleAuthCallback) 

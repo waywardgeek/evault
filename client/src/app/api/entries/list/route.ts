@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware'
+import { logger } from '@/lib/logger';
 import { getEntriesByUserId } from '@/lib/db'
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req: AuthenticatedRequest) => {
@@ -13,7 +16,7 @@ export async function GET(request: NextRequest) {
         names,
       })
     } catch (error) {
-      console.error('Failed to retrieve entries:', error)
+      logger.error('Failed to retrieve entries:', error)
       return NextResponse.json(
         { error: 'Failed to retrieve entries' },
         { status: 500 }

@@ -1,8 +1,11 @@
 'use client'
 
 import { signIn, getSession } from 'next-auth/react'
+import { logger } from '@/lib/logger';
 import { useRouter, useSearchParams } from 'next/navigation'
+import { logger } from '@/lib/logger';
 import { useEffect, useState, Suspense } from 'react'
+import { logger } from '@/lib/logger';
 
 function LoginContent() {
   const router = useRouter()
@@ -35,7 +38,7 @@ function LoginContent() {
         redirect: true,
       })
     } catch (error) {
-      console.error('Sign in error:', error)
+      logger.error('Sign in error:', error)
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)
@@ -53,7 +56,7 @@ function LoginContent() {
         redirect: true,
       })
     } catch (error) {
-      console.error('Sign in error:', error)
+      logger.error('Sign in error:', error)
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)

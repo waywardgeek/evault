@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware'
+import { logger } from '@/lib/logger';
 import { createEntry, getEntriesByUserId, getCurrentOpenADPMetadata } from '@/lib/db'
+import { logger } from '@/lib/logger';
 
 // Add new entry
 export async function POST(request: NextRequest) {
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         )
       }
-      console.error('Failed to add entry:', error)
+      logger.error('Failed to add entry:', error)
       return NextResponse.json(
         { error: 'Failed to add entry' },
         { status: 500 }
@@ -84,7 +87,7 @@ export async function GET(request: NextRequest) {
         entries: entryBlobs,
       })
     } catch (error) {
-      console.error('Failed to retrieve entries:', error)
+      logger.error('Failed to retrieve entries:', error)
       return NextResponse.json(
         { error: 'Failed to retrieve entries' },
         { status: 500 }

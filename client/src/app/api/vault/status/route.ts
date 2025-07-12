@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware'
+import { logger } from '@/lib/logger';
 import { getCurrentOpenADPMetadata } from '@/lib/db'
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req: AuthenticatedRequest) => {
@@ -14,7 +17,7 @@ export async function GET(request: NextRequest) {
         openadp_metadata: currentMetadata,
       })
     } catch (error) {
-      console.error('Failed to get vault status:', error)
+      logger.error('Failed to get vault status:', error)
       return NextResponse.json(
         { error: 'Failed to get vault status' },
         { status: 500 }

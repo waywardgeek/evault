@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { openadp, crypto_service } from '@/lib/openadp';
 import { VaultStatusResponse, ListEntriesResponse, GetEntriesResponse } from '@/../../shared/types/api';
+import { logger } from '@/lib/logger';
 
 interface VaultEntry {
   name: string;
@@ -74,7 +75,7 @@ export default function VaultPage() {
         })));
       }
     } catch (error) {
-      console.error('Failed to load vault data:', error);
+      logger.error('Failed to load vault data:', error);
     } finally {
       setLoading(false);
     }
@@ -82,33 +83,32 @@ export default function VaultPage() {
 
   const handleRegisterVault = async (pin: string) => {
     try {
-      console.log('🚀 Starting vault registration process...');
-      console.log(`📱 PIN length: ${pin.length}`);
-      console.log(`👤 User ID: ${session?.serverUser?.user_id}`);
+      logger.debug('Starting vault registration process...');
+      logger.debug(`PIN length: ${pin.length}`);
+      logger.debug(`User ID: ${session?.serverUser?.user_id}`);
       
       setLoading(true);
       
       // SECURITY: Client handles ALL OpenADP operations directly
-      console.log('🔄 Calling OpenADP registration...');
+      logger.debug('Calling OpenADP registration...');
       const { metadata, privateKey } = await openadp.registerNewVault(session!.serverUser!.user_id, pin);
       
-      console.log('✅ OpenADP registration completed successfully');
-      console.log(`📦 Metadata length: ${metadata.length} characters`);
-      console.log(`📦 Metadata preview: ${metadata.substring(0, 100)}...`);
-      console.log(`🔑 Private key received: ${privateKey.length} bytes`);
+      logger.debug('OpenADP registration completed successfully');
+      logger.debug(`Metadata length: ${metadata.length} characters`);
+      logger.debug(`Private key received: ${privateKey.length} bytes`);
       
       // Register with server - SECURITY: Only send metadata, no OpenADP calls by server
-      console.log('🌐 Sending registration data to server...');
+      logger.debug('Sending registration data to server...');
       const registrationPayload = {
         pin: pin, // Server validates PIN but doesn't call OpenADP
         openadp_metadata: metadata
       };
-      console.log(`📤 Payload: pin=${pin.length} chars, metadata=${metadata.length} chars`);
+      logger.debug(`Payload: pin=${pin.length} chars, metadata=${metadata.length} chars`);
       
       const serverResponse = await apiClient.post('/vault/register', registrationPayload);
       
-      console.log('✅ Server registration completed successfully');
-      console.log(`📥 Server response:`, serverResponse);
+      logger.debug('Server registration completed successfully');
+      logger.debug(`Server response:`, serverResponse);
       
       // SECURITY: Store private key in memory for decryption (Level 2 authentication)
       setPrivateKey(privateKey);
@@ -118,18 +118,18 @@ export default function VaultPage() {
       setIsUnlocked(true);
       
       // Reload vault data to show the new vault status
-      console.log('🔄 Reloading vault data...');
+      logger.debug('Reloading vault data...');
       await loadVaultData();
       
       // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
-      console.log('✅ Vault registered successfully - private key available for on-demand decryption');
+      logger.debug('Vault registered successfully - private key available for on-demand decryption');
       
       setShowRegisterVault(false);
       
-      console.log('🎉 Vault registration completed successfully!');
+      logger.debug('Vault registration completed successfully!');
     } catch (error) {
-      console.error('❌ Vault registration failed:', error);
-      console.error('❌ Error details:', {
+      logger.error('Vault registration failed:', error);
+      logger.error('Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         type: typeof error,
@@ -145,24 +145,24 @@ export default function VaultPage() {
     try {
       setLoading(true);
       
-      console.log('🔓 Starting vault unlock process...');
-      console.log(`📱 PIN: ${pin}`);
+      logger.debug('Starting vault unlock process...');
+      logger.debug(`PIN: ${pin}`);
       
       // SECURITY: Get metadata from server, but client handles OpenADP recovery
-      console.log('🌐 Requesting metadata from server...');
+      logger.debug('Requesting metadata from server...');
       const recoverResponse = await apiClient.post<{ success: boolean; openadp_metadata: string }>('/vault/recover', { pin });
       
-      console.log('📥 Server response:', recoverResponse);
+      logger.debug('Server response:', recoverResponse);
       
       if (!recoverResponse.openadp_metadata) {
         throw new Error('No vault metadata returned from server');
       }
       
-      console.log(`📦 Metadata received: ${recoverResponse.openadp_metadata.length} characters`);
-      console.log(`📦 Metadata preview: ${recoverResponse.openadp_metadata.substring(0, 100)}...`);
+      logger.debug(`Metadata received: ${recoverResponse.openadp_metadata.length} characters`);
+      logger.debug(`Metadata preview: ${recoverResponse.openadp_metadata.substring(0, 100)}...`);
       
       // SECURITY: Client handles OpenADP recovery directly - no server OpenADP calls
-      console.log('🔄 Calling OpenADP recovery...');
+      logger.debug('Calling OpenADP recovery...');
       let privateKey, remaining;
       try {
         const result = await openadp.recoverVaultKey(
@@ -172,14 +172,14 @@ export default function VaultPage() {
         privateKey = result.privateKey;
         remaining = result.remaining;
         
-        console.log('✅ OpenADP recovery successful');
-        console.log(`🔑 Private key recovered: ${privateKey.length} bytes`);
-        console.log(`⚠️ Remaining attempts: ${remaining}`);
+        logger.debug('OpenADP recovery successful');
+        logger.debug(`Private key recovered: ${privateKey.length} bytes`);
+        logger.debug(`Remaining attempts: ${remaining}`);
       } catch (openadpError: any) {
-        console.error('❌ OpenADP recovery failed:', openadpError);
+        logger.error('OpenADP recovery failed:', openadpError);
         // Check if it's just a backup refresh failure - we might still have the private key
         if (openadpError.message && openadpError.message.includes('backup') && openadpError.privateKey) {
-          console.log('⚠️ Backup refresh failed but private key recovered - continuing anyway');
+          logger.warn('Backup refresh failed but private key recovered - continuing anyway');
           privateKey = openadpError.privateKey;
           remaining = openadpError.remaining || 'unknown';
         } else {
@@ -210,19 +210,19 @@ export default function VaultPage() {
                 : entry
             ));
             
-            console.log(`✅ Successfully auto-decrypted entry: ${entry.name}`);
-          } catch (error) {
-            console.error('Failed to auto-decrypt entry:', error);
+                      logger.debug(`Successfully auto-decrypted entry: ${entry.name}`);
+        } catch (error) {
+          logger.error('Failed to auto-decrypt entry:', error);
           }
         }
         setPendingDecryptIndex(null);
       }
       
       // Note: Don't automatically decrypt entries - user can decrypt on-demand with View button
-      console.log('✅ Vault unlocked successfully - private key available for on-demand decryption');
+      logger.debug('Vault unlocked successfully - private key available for on-demand decryption');
     } catch (error) {
-      console.error('❌ Failed to unlock vault:', error);
-      console.error('❌ Error details:', {
+      logger.error('Failed to unlock vault:', error);
+      logger.error('Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         type: typeof error,
@@ -264,7 +264,7 @@ export default function VaultPage() {
       ));
 
       const entry = entries[entryIndex];
-      console.log(`🔓 Decrypting entry: ${entry.name}`);
+      logger.debug(`Decrypting entry: ${entry.name}`);
       
       const { secret } = await crypto_service.decryptEntry(entry.hpkeBlob, privateKey);
       
@@ -275,9 +275,9 @@ export default function VaultPage() {
           : entry
       ));
 
-      console.log(`✅ Successfully decrypted entry: ${entry.name}`);
+      logger.debug(`Successfully decrypted entry: ${entry.name}`);
     } catch (error) {
-      console.error('Failed to decrypt entry:', error);
+      logger.error('Failed to decrypt entry:', error);
       alert('Failed to decrypt entry. Please try again.');
       
       // Clear decrypting state on error
@@ -313,7 +313,7 @@ export default function VaultPage() {
       await loadVaultData();
       setShowAddEntry(false);
     } catch (error) {
-      console.error('Failed to add entry:', error);
+      logger.error('Failed to add entry:', error);
       alert(`Failed to add entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
@@ -352,7 +352,7 @@ export default function VaultPage() {
       // Reload entries
       await loadVaultData();
     } catch (error) {
-      console.error('Failed to delete entry:', error);
+      logger.error('Failed to delete entry:', error);
       alert(`Failed to delete entry: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
@@ -376,7 +376,7 @@ export default function VaultPage() {
       // Remove decryptedSecret and isDecrypting properties
     })));
     
-    console.log('🔒 Vault locked - can still add entries, but need PIN to view/delete');
+    logger.debug('Vault locked - can still add entries, but need PIN to view/delete');
   };
 
 

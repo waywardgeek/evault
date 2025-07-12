@@ -14,19 +14,21 @@ if (!process.env.NEXTAUTH_URL) {
     process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`
   }
   
-  console.log('🔧 Dynamically set NEXTAUTH_URL to:', process.env.NEXTAUTH_URL)
+  logger.debug('🔧 Dynamically set NEXTAUTH_URL to:', process.env.NEXTAUTH_URL)
 }
 
 import NextAuth from 'next-auth'
+import { logger } from '@/lib/logger';
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger';
 
-console.log('🔧 NextAuth Route Handler Loaded')
+logger.debug('🔧 NextAuth Route Handler Loaded')
 
 const handler = NextAuth(authOptions)
 
 // Add debugging wrapper
 const debugHandler = async (req: Request, context: any) => {
-  console.log('🔍 NextAuth Request:', {
+  logger.debug('🔍 NextAuth Request:', {
     method: req.method,
     url: req.url,
     headers: Object.fromEntries(req.headers.entries()),
@@ -36,14 +38,14 @@ const debugHandler = async (req: Request, context: any) => {
   
   try {
     const response = await handler(req, context)
-    console.log('✅ NextAuth Response:', {
+    logger.debug('✅ NextAuth Response:', {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
       timestamp: new Date().toISOString()
     })
     return response
   } catch (error) {
-    console.error('❌ NextAuth Error:', error)
+    logger.error('❌ NextAuth Error:', error)
     throw error
   }
 }

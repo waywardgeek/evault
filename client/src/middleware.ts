@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger';
 
 export function middleware(request: NextRequest) {
   // Log Apple OAuth callback data
   if (request.nextUrl.pathname === '/api/auth/callback/apple' && request.method === 'POST') {
-    console.log('🍎 Apple OAuth Callback Intercepted:', {
+    logger.debug('🍎 Apple OAuth Callback Intercepted:', {
       method: request.method,
       url: request.url,
       contentLength: request.headers.get('content-length'),
@@ -16,7 +17,7 @@ export function middleware(request: NextRequest) {
 
     // Try to read the body (this might not work due to streaming, but worth trying)
     request.clone().text().then(body => {
-      console.log('🍎 Apple OAuth Callback Body:', {
+      logger.debug('🍎 Apple OAuth Callback Body:', {
         bodyLength: body.length,
         bodyContent: body,
         parsedForm: new URLSearchParams(body),
@@ -40,10 +41,10 @@ export function middleware(request: NextRequest) {
           headers: Object.fromEntries(request.headers.entries())
         })
       }).catch(err => {
-        console.log('🍎 Could not log to endpoint:', err.message);
+        logger.debug('🍎 Could not log to endpoint:', err.message);
       });
     }).catch(err => {
-      console.log('🍎 Could not read body:', err.message);
+      logger.debug('🍎 Could not read body:', err.message);
     });
   }
 

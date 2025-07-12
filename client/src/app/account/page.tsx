@@ -1,9 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react'
+import { logger } from '@/lib/logger';
 import { useSession, signOut } from 'next-auth/react'
+import { logger } from '@/lib/logger';
 import { useRouter } from 'next/navigation'
+import { logger } from '@/lib/logger';
 import { User, Mail, Trash2, Shield, Key, LogOut } from 'lucide-react'
+import { logger } from '@/lib/logger';
 
 interface AccountInfo {
   email: string;
@@ -37,7 +41,7 @@ export default function AccountPage() {
 
       try {
         const token = (session as any).serverToken;
-        console.log('🔍 Loading account info - Server token available:', !!token);
+        logger.debug('🔍 Loading account info - Server token available:', !!token);
         
         if (!token) {
           throw new Error('No server token available. Please sign out and sign in again.');
@@ -57,7 +61,7 @@ export default function AccountPage() {
         const data = await response.json();
         setAccountInfo(data);
       } catch (error) {
-        console.error('Failed to load account info:', error);
+        logger.error('Failed to load account info:', error);
       } finally {
         setLoading(false);
       }
@@ -85,17 +89,17 @@ export default function AccountPage() {
 
       // Debug: Log the raw response text to see what we're getting
       const responseText = await response.text();
-      console.log('🔍 Raw response:', responseText);
-      console.log('🔍 Response status:', response.status);
-      console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
+      logger.debug('🔍 Raw response:', responseText);
+      logger.debug('🔍 Response status:', response.status);
+      logger.debug('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
       
       // Parse JSON response for both success and error cases
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (parseError) {
-        console.error('❌ JSON Parse Error:', parseError);
-        console.error('❌ Raw response text:', responseText);
+        logger.error('❌ JSON Parse Error:', parseError);
+        logger.error('❌ Raw response text:', responseText);
         throw new Error(`Invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
       }
 
@@ -109,7 +113,7 @@ export default function AccountPage() {
       setNewEmail('');
       alert('Email updated successfully!');
     } catch (error) {
-      console.error('Failed to update email:', error);
+      logger.error('Failed to update email:', error);
       alert(`Failed to update email: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setEmailChanging(false);
@@ -129,10 +133,10 @@ export default function AccountPage() {
 
     try {
       setLoading(true);
-      console.log('🗑️ Starting account deletion process...');
+      logger.debug('🗑️ Starting account deletion process...');
 
       const token = (session as any).serverToken;
-      console.log('🔍 Server token available:', !!token);
+      logger.debug('🔍 Server token available:', !!token);
       
       if (!token) {
         throw new Error('No server token available. Please sign out and sign in again.');
@@ -150,21 +154,21 @@ export default function AccountPage() {
         throw new Error('Failed to delete account');
       }
 
-      console.log('✅ Account deleted from server');
+      logger.debug('✅ Account deleted from server');
 
       // Clear all local storage and cached data
       const { clearAllKeys } = await import('@/lib/openadp');
       await clearAllKeys();
       localStorage.removeItem('jwt_token');
 
-      console.log('✅ Cleared all local data');
-      console.log('🔄 Logging out to clear authentication state...');
+      logger.debug('✅ Cleared all local data');
+      logger.debug('🔄 Logging out to clear authentication state...');
 
       // Force logout to clear OAuth session
       await signOut({ redirect: true, callbackUrl: '/login' });
       
     } catch (error) {
-      console.error('❌ Failed to delete account:', error);
+      logger.error('❌ Failed to delete account:', error);
       alert(`Failed to delete account: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
