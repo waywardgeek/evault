@@ -1,0 +1,6 @@
+{
+  "rootDirectory": "client",
+  "framework": "nextjs",
+  "buildCommand": "cd client && prisma generate && npm run build",
+  "outputDirectory": "client/.next"
+} 
