@@ -218,7 +218,7 @@ export class eVaultOpenADP {
       const { apiClient } = await import('../lib/api-client');
       
       const result = await apiClient.post<{ success: boolean; error?: string }>('/vault/refresh', {
-        updated_metadata: metadataBase64,
+        openadp_metadata: metadataBase64,
       });
       
       logger.debug(`📥 Server response:`, result);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
@@ -30,35 +30,8 @@ export default function VaultPage() {
   const [hasPrivateKey, setHasPrivateKey] = useState(false);
   const [pendingDecryptIndex, setPendingDecryptIndex] = useState<number | null>(null);
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/login');
-      return;
-    }
-  }, [session, status, router]);
-
-  // Load vault status and entries
-  useEffect(() => {
-    if (session) {
-      loadVaultData();
-    }
-  }, [session]);
-
-  // Check if we have cached public key (unlocked state)
-  useEffect(() => {
-    const checkPublicKey = async () => {
-      const { hasLocalPublicKey } = await import('@/lib/openadp');
-      const hasKey = await hasLocalPublicKey();
-      setIsUnlocked(hasKey);
-    };
-    checkPublicKey();
-    // Note: Private key is only stored in memory during the session
-    // After page reload, user needs to enter PIN again to view secrets
-  }, []);
-
-  const loadVaultData = async () => {
+  // Define loadVaultData before useEffect that depends on it
+  const loadVaultData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -79,7 +52,35 @@ export default function VaultPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (!session) {
+      router.push('/login');
+      return;
+    }
+  }, [session, status, router]);
+
+  // Load vault status and entries
+  useEffect(() => {
+    if (session) {
+      loadVaultData();
+    }
+  }, [session, loadVaultData]);
+
+  // Check if we have cached public key (unlocked state)
+  useEffect(() => {
+    const checkPublicKey = async () => {
+      const { hasLocalPublicKey } = await import('@/lib/openadp');
+      const hasKey = await hasLocalPublicKey();
+      setIsUnlocked(hasKey);
+    };
+    checkPublicKey();
+    // Note: Private key is only stored in memory during the session
+    // After page reload, user needs to enter PIN again to view secrets
+  }, []);
 
   const handleRegisterVault = async (pin: string) => {
     try {
