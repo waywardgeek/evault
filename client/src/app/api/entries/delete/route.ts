@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { logger } from '@/lib/logger';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware'
-import { logger } from '@/lib/logger';
 import { deleteEntry, getEntry } from '@/lib/db'
-import { logger } from '@/lib/logger';
 import crypto from 'crypto'
 import { logger } from '@/lib/logger';
 
 export async function DELETE(request: NextRequest) {
   return withAuth(request, async (req: AuthenticatedRequest) => {
     const body = await req.json()
-    const { name, deletion_token } = body
+    const { name, deletion_pre_hash } = body
 
-    if (!name || !deletion_token) {
+    if (!name || !deletion_pre_hash) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -29,11 +26,12 @@ export async function DELETE(request: NextRequest) {
         )
       }
 
-      // Verify deletion token matches stored hash
-      const tokenHash = crypto.createHash('sha256').update(deletion_token).digest()
+      // Verify deletion pre-hash matches stored hash
+      const deletionPreHashBuffer = Buffer.from(deletion_pre_hash, 'base64')
+      const tokenHash = crypto.createHash('sha256').update(deletionPreHashBuffer).digest()
       if (!tokenHash.equals(entry.deletionHash)) {
         return NextResponse.json(
-          { error: 'Invalid deletion token' },
+          { error: 'Invalid deletion pre-hash' },
           { status: 403 }
         )
       }
