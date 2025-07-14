@@ -128,10 +128,8 @@ export async function deleteEntry(userId: string, name: string) {
 // Stats operations
 export async function getUserStats() {
   const totalUsers = await prisma.user.count()
-  const verifiedUsers = await prisma.user.count({
-    where: { verified: true },
-  })
-  const usersWithVault = await prisma.user.count({
+  
+  const usersWithVaults = await prisma.user.count({
     where: {
       OR: [
         { openadpMetadataA: { not: null } },
@@ -140,9 +138,36 @@ export async function getUserStats() {
     },
   })
 
+  // Recent signups - last 7 days
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const recentSignups7d = await prisma.user.count({
+    where: {
+      createdAt: {
+        gte: sevenDaysAgo,
+      },
+    },
+  })
+
+  // Recent signups - last 30 days
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const recentSignups30d = await prisma.user.count({
+    where: {
+      createdAt: {
+        gte: thirtyDaysAgo,
+      },
+    },
+  })
+
+  // Total entries across all users
+  const totalEntries = await prisma.entry.count()
+
   return {
     total_users: totalUsers,
-    verified_users: verifiedUsers,
-    users_with_vault: usersWithVault,
+    recent_signups_7d: recentSignups7d,
+    recent_signups_30d: recentSignups30d,
+    users_with_vaults: usersWithVaults,
+    total_entries: totalEntries,
   }
 } 
