@@ -36,12 +36,8 @@ export default function DashboardPage() {
 
         // Get user statistics
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-          const response = await fetch(`${apiUrl}/api/stats`)
-          if (response.ok) {
-            const stats = await response.json()
-            setUserStats(stats)
-          }
+          const stats = await apiClient.get<UserStats>('/stats')
+          setUserStats(stats)
         } catch (err) {
           logger.debug('Failed to fetch user stats:', err)
         }
