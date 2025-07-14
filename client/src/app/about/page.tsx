@@ -176,7 +176,7 @@ export default function AboutPage() {
               <Code className="h-8 w-8 text-green-400 mr-3" />
               <h3 className="text-xl font-semibold">Internal Tools</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="max-w-md mx-auto">
               <Link 
                 href="/dashboard" 
                 className="bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg p-6 block"
@@ -186,19 +186,7 @@ export default function AboutPage() {
                   <span className="font-medium">Developer Dashboard</span>
                 </div>
                 <p className="text-gray-400 text-sm">
-                  Authentication status, server tokens, and debug information
-                </p>
-              </Link>
-              <Link 
-                href="/debug" 
-                className="bg-gray-800 hover:bg-gray-700 transition-colors rounded-lg p-6 block"
-              >
-                <div className="flex items-center mb-2">
-                  <Code className="h-5 w-5 text-green-400 mr-2" />
-                  <span className="font-medium">Debug Console</span>
-                </div>
-                <p className="text-gray-400 text-sm">
-                  API testing, crypto debugging, and development tools
+                  Authentication status, API connection, user statistics, and system debugging information
                 </p>
               </Link>
             </div>
