@@ -192,14 +192,13 @@ export async function generateEncryptionKey(
             return new GenerateEncryptionKeyResult(null, "No OpenADP servers available");
         }
         
-        // Step 3: Initialize encrypted clients for each server by fetching their public keys
-        const clients = [];
-        const liveServerUrls = [];
+        // Step 3: Initialize encrypted clients for each server by fetching their public keys - PARALLELIZED
+        console.log(`OpenADP: Initializing ${serverInfos.length} servers in parallel...`);
         
-        for (const serverInfo of serverInfos) {
+        const initializationPromises = serverInfos.map(async (serverInfo) => {
             try {
                 // Create a basic client to fetch server info first
-                const basicClient = new OpenADPClient(serverInfo.url);
+                const basicClient = new OpenADPClient(serverInfo.url, 5000);
                 
                 // Fetch server info to get the public key
                 const serverInfoResponse = await basicClient.getServerInfoStandardized();
@@ -215,19 +214,33 @@ export async function generateEncryptionKey(
                 }
                 
                 // Create encrypted client with the fetched public key
-                const client = new EncryptedOpenADPClient(serverInfo.url, publicKey);
+                const client = new EncryptedOpenADPClient(serverInfo.url, publicKey, 5000);
                 await client.ping();
-                
-                clients.push(client);
-                liveServerUrls.push(serverInfo.url);
                 
                 if (publicKey) {
                     console.log(`OpenADP: Server ${serverInfo.url} - Using Noise-NK encryption`);
                 } else {
                     console.log(`OpenADP: Server ${serverInfo.url} - No encryption (no public key)`);
                 }
+                
+                return { serverInfo, client, serverUrl: serverInfo.url };
             } catch (error) {
                 console.warn(`Server ${serverInfo.url} is not accessible: ${error.message}`);
+                return null;
+            }
+        });
+        
+        // Wait for all server initializations to complete
+        const initializationResults = await Promise.allSettled(initializationPromises);
+        
+        // Extract successful results
+        const clients = [];
+        const liveServerUrls = [];
+        
+        for (const result of initializationResults) {
+            if (result.status === 'fulfilled' && result.value !== null) {
+                clients.push(result.value.client);
+                liveServerUrls.push(result.value.serverUrl);
             }
         }
         
@@ -441,12 +454,10 @@ export async function recoverEncryptionKey(
         // Select servers intelligently based on remaining guesses
         const selectedServerInfos = selectServersByRemainingGuesses(serverInfosWithGuesses, calculatedThreshold);
         
-        // Initialize encrypted clients for selected servers
-        const clients = [];
-        const liveServerUrls = [];
-        const liveServerInfos = [];
+        // Initialize encrypted clients for selected servers - PARALLELIZED
+        console.log(`OpenADP: Initializing ${selectedServerInfos.length} recovery servers in parallel...`);
         
-        for (const serverInfo of selectedServerInfos) {
+        const clientInitPromises = selectedServerInfos.map(async (serverInfo) => {
             let publicKey = null;
             
             if (serverInfo.publicKey) {
@@ -463,14 +474,29 @@ export async function recoverEncryptionKey(
                 }
             }
             
-            const client = new EncryptedOpenADPClient(serverInfo.url, publicKey);
+            const client = new EncryptedOpenADPClient(serverInfo.url, publicKey, 5000);
             try {
                 await client.ping();
-                clients.push(client);
-                liveServerUrls.push(serverInfo.url);
-                liveServerInfos.push(serverInfo);
+                return { client, serverInfo };
             } catch (error) {
                 console.warn(`Server ${serverInfo.url} is not accessible: ${error.message}`);
+                return null;
+            }
+        });
+        
+        // Wait for all client initializations to complete
+        const clientInitResults = await Promise.allSettled(clientInitPromises);
+        
+        // Extract successful results
+        const clients = [];
+        const liveServerUrls = [];
+        const liveServerInfos = [];
+        
+        for (const result of clientInitResults) {
+            if (result.status === 'fulfilled' && result.value !== null) {
+                clients.push(result.value.client);
+                liveServerUrls.push(result.value.serverInfo.url);
+                liveServerInfos.push(result.value.serverInfo);
             }
         }
         
@@ -664,9 +690,9 @@ export async function recoverEncryptionKey(
  * @returns {Promise<ServerInfo[]>} Updated list of ServerInfo objects with remainingGuesses populated
  */
 async function fetchRemainingGuessesForServers(identity, serverInfos) {
-    const updatedServerInfos = [];
+    console.log(`OpenADP: Fetching remaining guesses from ${serverInfos.length} servers in parallel...`);
     
-    for (const serverInfo of serverInfos) {
+    const fetchPromises = serverInfos.map(async (serverInfo) => {
         // Create a copy to avoid modifying the original
         const updatedServerInfo = new ServerInfo(
             serverInfo.url,
@@ -691,7 +717,7 @@ async function fetchRemainingGuessesForServers(identity, serverInfos) {
             }
             
             // Create client and try to fetch backup info
-            const client = new EncryptedOpenADPClient(serverInfo.url, publicKey);
+            const client = new EncryptedOpenADPClient(serverInfo.url, publicKey, 5000);
             await client.ping(); // Test connectivity
             
             // List backups to get remaining guesses
@@ -711,14 +737,28 @@ async function fetchRemainingGuessesForServers(identity, serverInfos) {
             }
             
             updatedServerInfo.remainingGuesses = remainingGuesses;
-            console.log(`OpenADP: Server ${serverInfo.url} has ${remainingGuesses} remaining guesses`);
+            console.log(`OpenADP: Server ${serverInfo.url} has ${remainingGuesses === -1 ? 'unknown' : remainingGuesses} remaining guesses`);
             
-        } catch (e) {
-            console.warn(`Warning: Could not fetch remaining guesses from server ${serverInfo.url}:`, e);
-            // Keep the original remainingGuesses value (likely -1 for unknown)
+            return updatedServerInfo;
+        } catch (error) {
+            console.warn(`Warning: Could not fetch remaining guesses from server ${serverInfo.url}:`, error.message);
+            // Return the original info with unknown remaining guesses
+            updatedServerInfo.remainingGuesses = -1;
+            return updatedServerInfo;
         }
-        
-        updatedServerInfos.push(updatedServerInfo);
+    });
+    
+    // Wait for all fetch operations to complete
+    const fetchResults = await Promise.allSettled(fetchPromises);
+    
+    // Extract successful results
+    const updatedServerInfos = [];
+    for (const result of fetchResults) {
+        if (result.status === 'fulfilled') {
+            updatedServerInfos.push(result.value);
+        } else {
+            console.warn(`Failed to fetch remaining guesses:`, result.reason);
+        }
     }
     
     return updatedServerInfos;

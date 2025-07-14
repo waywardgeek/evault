@@ -276,7 +276,7 @@ export class JSONRPCResponse {
  * Basic OpenADP client with JSON-RPC support (no encryption)
  */
 export class OpenADPClient {
-    constructor(url, timeout = 30000) {
+    constructor(url, timeout = 10000) {
         this.url = url;
         this.timeout = timeout;
         this.requestId = 1;
@@ -458,7 +458,7 @@ export function parseServerPublicKey(keyB64) {
  * OpenADP client with Noise-NK encryption support
  */
 export class EncryptedOpenADPClient {
-    constructor(url, serverPublicKey = null, timeout = 30000) {
+    constructor(url, serverPublicKey = null, timeout = 10000) {
         this.url = url;
         this.serverPublicKey = serverPublicKey;
         this.timeout = timeout;
