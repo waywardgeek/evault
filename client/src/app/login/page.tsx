@@ -1,9 +1,7 @@
 'use client'
 
 import { signIn, getSession } from 'next-auth/react'
-import { logger } from '@/lib/logger';
 import { useRouter, useSearchParams } from 'next/navigation'
-import { logger } from '@/lib/logger';
 import { useEffect, useState, Suspense } from 'react'
 import { logger } from '@/lib/logger';
 

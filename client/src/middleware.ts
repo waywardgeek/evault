@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger';
 
 export function middleware(request: NextRequest) {
+  // Handle authenticated user redirect from home page
+  if (request.nextUrl.pathname === '/') {
+    const sessionToken = request.cookies.get('next-auth.session-token') || 
+                         request.cookies.get('__Secure-next-auth.session-token');
+    
+    if (sessionToken) {
+      // User is authenticated, redirect to vault
+      return NextResponse.redirect(new URL('/vault', request.url));
+    }
+  }
   // Log Apple OAuth callback data
   if (request.nextUrl.pathname === '/api/auth/callback/apple' && request.method === 'POST') {
     logger.debug('🍎 Apple OAuth Callback Intercepted:', {
@@ -52,5 +62,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/api/auth/callback/apple'
+  matcher: ['/', '/api/auth/callback/apple']
 } 

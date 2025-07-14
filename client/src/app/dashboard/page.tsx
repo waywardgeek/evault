@@ -1,13 +1,9 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { logger } from '@/lib/logger';
 import { useRouter } from 'next/navigation'
-import { logger } from '@/lib/logger';
 import { useEffect, useState } from 'react'
-import { logger } from '@/lib/logger';
 import { apiClient } from '@/lib/api-client'
-import { logger } from '@/lib/logger';
 import type { UserResponse } from '../../../../shared/types/api'
 import { logger } from '@/lib/logger';
 

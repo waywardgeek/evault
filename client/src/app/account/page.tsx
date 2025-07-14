@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react'
-import { logger } from '@/lib/logger';
 import { useSession, signOut } from 'next-auth/react'
-import { logger } from '@/lib/logger';
 import { useRouter } from 'next/navigation'
-import { logger } from '@/lib/logger';
 import { User, Mail, Trash2, Shield, Key, LogOut } from 'lucide-react'
 import { logger } from '@/lib/logger';
 

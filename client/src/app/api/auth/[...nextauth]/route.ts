@@ -18,7 +18,6 @@ if (!process.env.NEXTAUTH_URL) {
 }
 
 import NextAuth from 'next-auth'
-import { logger } from '@/lib/logger';
 import { authOptions } from '@/lib/auth'
 import { logger } from '@/lib/logger';
 

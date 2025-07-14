@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { logger } from '@/lib/logger';
 import { withAuth, AuthenticatedRequest } from '@/lib/auth-middleware'
-import { logger } from '@/lib/logger';
 import { getEntriesByUserId } from '@/lib/db'
 import { logger } from '@/lib/logger';
 

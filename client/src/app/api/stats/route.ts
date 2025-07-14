@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { logger } from '@/lib/logger';
 import { getUserStats } from '@/lib/db'
 import { logger } from '@/lib/logger';
 

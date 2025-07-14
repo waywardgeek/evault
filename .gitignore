@@ -189,3 +189,4 @@ build/
 *.sar
 *.class
 .vercel
+.aider*

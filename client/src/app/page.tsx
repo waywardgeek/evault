@@ -3,20 +3,11 @@
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 import { ArrowRight } from 'lucide-react'
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
-
-  // Automatically redirect logged-in users to their vault
-  useEffect(() => {
-    if (status === 'loading') return; // Wait for session to load
-    if (session) {
-      router.push('/vault');
-    }
-  }, [session, status, router]);
 
   const handleGetStarted = () => {
     if (session) {
