@@ -160,9 +160,9 @@ export default function AboutPage() {
               <Mail className="h-8 w-8 text-green-600 mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Contact & Support</h3>
               <div className="space-y-3 text-gray-600">
-                <p><strong>General Inquiries:</strong> hello@evaultapp.com</p>
-                <p><strong>Security Issues:</strong> security@evaultapp.com</p>
-                <p><strong>Technical Support:</strong> support@evaultapp.com</p>
+                <p><strong>Questions, feedback, or security issues:</strong></p>
+                <p className="text-lg font-medium text-gray-900">waywardgeek@gmail.com</p>
+                <p className="text-sm">Built by an independent developer passionate about privacy and security.</p>
               </div>
             </div>
           </div>
