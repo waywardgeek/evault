@@ -768,41 +768,109 @@ async function fetchRemainingGuessesForServers(identity, serverInfos) {
  * Select servers intelligently based on remaining guesses.
  * 
  * Strategy:
- * 1. Filter out servers with 0 remaining guesses (exhausted)
+ * 1. Filter out servers with 0 remaining guesses (exhausted) or unknown guesses (-1)
  * 2. Sort by remaining guesses (descending) to use servers with most guesses first
- * 3. Servers with unknown remaining guesses (-1) are treated as having infinite guesses
- * 4. Select threshold + 2 servers for redundancy
+ * 3. Servers with unknown remaining guesses (-1) are treated as having 0 guesses (filtered out)
+ * 4. If no servers with known positive guesses, fall back to unknown servers as last resort
+ * 5. Select threshold + 2 servers for redundancy
  * 
  * @param {ServerInfo[]} serverInfos - List of ServerInfo objects with remainingGuesses populated
  * @param {number} threshold - Minimum number of servers needed
  * @returns {ServerInfo[]} Selected servers sorted by remaining guesses (descending)
  */
 function selectServersByRemainingGuesses(serverInfos, threshold) {
-    // Filter out servers with 0 remaining guesses (exhausted)
-    const availableServers = serverInfos.filter(s => s.remainingGuesses !== 0);
+    // Filter servers by remaining guesses priority:
+    // 1. Servers with known positive guesses (> 0) - highest priority
+    // 2. Servers with unknown guesses (-1) - medium priority 
+    // 3. Servers with 0 guesses - lowest priority (exhausted, avoid if possible)
     
-    if (availableServers.length === 0) {
-        console.warn("Warning: All servers have exhausted their guesses!");
-        return serverInfos; // Return original list as fallback
+    // First, try servers with known positive remaining guesses
+    const serversWithKnownGuesses = serverInfos.filter(s => s.remainingGuesses > 0);
+    
+    if (serversWithKnownGuesses.length >= threshold) {
+        // Sort by remaining guesses (descending) - servers with more guesses first
+        const sortedServers = serversWithKnownGuesses.sort((a, b) => {
+            return b.remainingGuesses - a.remainingGuesses;
+        });
+        
+        const numToSelect = Math.min(sortedServers.length, threshold + 2);
+        const selectedServers = sortedServers.slice(0, numToSelect);
+        
+        console.log(`OpenADP: Selected ${selectedServers.length} servers with known positive remaining guesses:`);
+        selectedServers.forEach((server, i) => {
+            console.log(`  ${i+1}. ${server.url} (${server.remainingGuesses} remaining guesses)`);
+        });
+        
+        return selectedServers;
     }
     
-    // Sort by remaining guesses (descending)
-    // Servers with unknown remaining guesses (-1) are treated as having the highest priority
-    const sortedServers = availableServers.sort((a, b) => {
-        const aGuesses = a.remainingGuesses === -1 ? Infinity : a.remainingGuesses;
-        const bGuesses = b.remainingGuesses === -1 ? Infinity : b.remainingGuesses;
-        return bGuesses - aGuesses;
+    // If not enough servers with known positive guesses, add servers with unknown guesses
+    const serversWithUnknownGuesses = serverInfos.filter(s => s.remainingGuesses === -1);
+    const combinedServers = [...serversWithKnownGuesses, ...serversWithUnknownGuesses];
+    
+    if (combinedServers.length >= threshold) {
+        // Sort with known positive guesses first, then unknown
+        const sortedServers = combinedServers.sort((a, b) => {
+            // Known positive guesses come first, sorted by remaining guesses (descending)
+            if (a.remainingGuesses > 0 && b.remainingGuesses > 0) {
+                return b.remainingGuesses - a.remainingGuesses;
+            }
+            if (a.remainingGuesses > 0 && b.remainingGuesses === -1) {
+                return -1; // a comes first
+            }
+            if (a.remainingGuesses === -1 && b.remainingGuesses > 0) {
+                return 1; // b comes first
+            }
+            // Both are unknown (-1), maintain original order
+            return 0;
+        });
+        
+        const numToSelect = Math.min(sortedServers.length, threshold + 2);
+        const selectedServers = sortedServers.slice(0, numToSelect);
+        
+        console.log(`OpenADP: Selected ${selectedServers.length} servers (some with unknown remaining guesses):`);
+        selectedServers.forEach((server, i) => {
+            const guessesStr = server.remainingGuesses === -1 ? "unknown" : server.remainingGuesses.toString();
+            console.log(`  ${i+1}. ${server.url} (${guessesStr} remaining guesses)`);
+        });
+        
+        return selectedServers;
+    }
+    
+    // Last resort: use all available servers (including exhausted ones)
+    console.warn("Warning: Not enough servers with positive or unknown guesses. Using all available servers as last resort!");
+    
+    // Sort all servers with preference: positive > unknown > exhausted
+    const allServersSorted = serverInfos.sort((a, b) => {
+        if (a.remainingGuesses > 0 && b.remainingGuesses <= 0) return -1;
+        if (a.remainingGuesses <= 0 && b.remainingGuesses > 0) return 1;
+        if (a.remainingGuesses > 0 && b.remainingGuesses > 0) {
+            return b.remainingGuesses - a.remainingGuesses;
+        }
+        if (a.remainingGuesses === -1 && b.remainingGuesses === 0) return -1;
+        if (a.remainingGuesses === 0 && b.remainingGuesses === -1) return 1;
+        return 0;
     });
     
-    // Select threshold + 2 servers for redundancy, but don't exceed available servers
-    const numToSelect = Math.min(sortedServers.length, threshold + 2);
-    const selectedServers = sortedServers.slice(0, numToSelect);
+    const numToSelect = Math.min(allServersSorted.length, threshold + 2);
+    const selectedServers = allServersSorted.slice(0, numToSelect);
     
-    console.log(`OpenADP: Selected ${selectedServers.length} servers based on remaining guesses:`);
+    console.log(`OpenADP: Selected ${selectedServers.length} servers (last resort - may include exhausted servers):`);
     selectedServers.forEach((server, i) => {
-        const guessesStr = server.remainingGuesses === -1 ? "unknown" : server.remainingGuesses.toString();
+        let guessesStr;
+        if (server.remainingGuesses === -1) guessesStr = "unknown";
+        else if (server.remainingGuesses === 0) guessesStr = "0 (exhausted)";
+        else guessesStr = server.remainingGuesses.toString();
         console.log(`  ${i+1}. ${server.url} (${guessesStr} remaining guesses)`);
     });
     
     return selectedServers;
-} 
+}
+
+// Export for testing (conditional export to avoid production exposure)
+if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    // Only export for testing
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports.selectServersByRemainingGuesses = selectServersByRemainingGuesses;
+    }
+}

@@ -57,7 +57,7 @@
     "sharp": "^0.34.2",
     "ts-jest": "^29.2.5",
     "tsx": "^4.20.3",
-    "vercel": "^44.4.0"
+    "vercel": "^32.0.1"
   },
   "jest": {
     "testEnvironment": "jsdom",
